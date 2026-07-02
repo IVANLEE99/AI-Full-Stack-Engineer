@@ -30,7 +30,7 @@ func main() {
 
 	//删除
 	nums = append(nums[:1], nums[2:]...)
-	fmt.Println(nums) // [1 4 5 6]
+	fmt.Println(nums) // [1 8 4 5 6]
 
 	//map
 	m := make(map[string]int)
