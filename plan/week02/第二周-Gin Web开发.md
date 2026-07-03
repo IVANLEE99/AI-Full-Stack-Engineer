@@ -1,8 +1,8 @@
-# 第二周详细学习内容:Gin Web 开发
+# 第二周详细学习内容: Gin Web开发
 
-> 主题:Gin Web 开发
-> 目标:用 Gin 重写 Todo API,并加上用户注册 / 登录 + JWT 鉴权,跑通完整鉴权链路。
-> 原则:本周你已经会写标准库 http 了,现在换成生产级框架。**边学边把上周的 Todo 迁过来,不要空学 API。**
+> 主题: Gin Web开发
+> 目标: 用 Gin 重写 Todo API,并加上用户注册 / 登录 + JWT 鉴权,跑通完整鉴权链路。
+> 原则: 本周你已经会写标准库 http 了,现在换成生产级框架。**边学边把上周的 Todo 迁过来,不要空学 API。**
 
 ---
 
@@ -39,7 +39,7 @@
 
 ## 三、每天学习安排(7天)
 
-### Day 1:装 Gin,跑通第一个路由
+### Day 1: 装 Gin,跑通第一个路由
 
 **初始化项目**
 ```bash
@@ -78,7 +78,7 @@ curl localhost:8080/ping   # {"message":"pong"}
 
 ---
 
-### Day 2:路由分组 + 路径 / 查询参数
+### Day 2: 路由分组 + 路径 / 查询参数
 
 ```go
 package main
@@ -123,7 +123,7 @@ curl localhost:8080/api/v1/todos/42         # {"id":"42"}
 
 ---
 
-### Day 3:参数绑定与校验(ShouldBindJSON + validator)
+### Day 3: 参数绑定与校验(ShouldBindJSON + validator)
 
 这是 Gin 最省事的地方:把请求体直接绑到 struct,并用 tag 自动校验。
 
@@ -183,7 +183,7 @@ oneof=a b c     枚举值
 
 ---
 
-### Day 4:中间件与执行顺序(核心)
+### Day 4: 中间件与执行顺序(核心)
 
 中间件是本周最需要理解的概念,尤其执行顺序。
 
@@ -258,7 +258,7 @@ func main() {
 
 ---
 
-### Day 5:JWT 基础(签发与校验)
+### Day 5: JWT 基础(签发与校验)
 
 JWT 是无状态鉴权:登录时签发一个 token,后续请求带上,服务端校验签名。
 
@@ -320,7 +320,7 @@ func ParseToken(tokenStr string) (*Claims, error) {
 
 ---
 
-### Day 6-7:实战(Gin 版 Todo + 用户鉴权)
+### Day 6-7: 实战(Gin 版 Todo + 用户鉴权)
 
 这是本周产出。把上周的 Todo 迁到 Gin,并加上注册 / 登录 + JWT 中间件。密码用 bcrypt 存哈希。
 
