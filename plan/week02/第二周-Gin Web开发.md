@@ -45,8 +45,20 @@
 ```bash
 mkdir gin-todo && cd gin-todo
 go mod init gin-todo
+
+# 设置国内代理(避免 go get 超时)
+go env -w GOPROXY=https://goproxy.cn,direct
+
 go get github.com/gin-gonic/gin
 ```
+
+> 💡 如果没有设置国内代理,`go get github.com/gin-gonic/gin` 可能会因为访问 `proxy.golang.org` 超时而失败:
+> ```
+> go: module github.com/gin-gonic/gin: Get "https://proxy.golang.org/...": dial tcp ... i/o timeout
+> ```
+> 解决办法就是先执行 `go env -w GOPROXY=https://goproxy.cn,direct` 再 `go get`。
+> 
+> 如果你不确定是否设过代理,可以用 `go env GOPROXY` 查看当前值。
 
 **第一个 Gin 服务** `main.go`
 ```go

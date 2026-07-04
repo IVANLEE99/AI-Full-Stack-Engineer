@@ -357,7 +357,100 @@ curl -i http://localhost:8080/todos
 
 ---
 
-## 十一、学习建议
+## 十一、Postman 和 curl 对照表
+
+如果你熟悉 Postman,用这个对照表能把 Postman 里的操作用 curl 写出来。
+
+### 常用操作对照
+
+| Postman 操作 | curl 等效命令 | 说明 |
+|---|---|---|
+| **新建 GET 请求** | `curl URL` | 默认就是 GET |
+| **新建 POST 请求** | `curl -X POST URL` | `-X` 指定方法 |
+| **Headers 输入框** | `-H "Key: Value"` | 一个 `-H` 加一个请求头 |
+| **Body > raw > JSON** | `-d '{"key":"value"}'` | 数据要写在单引号里 |
+| **Authorization > Bearer Token** | `-H "Authorization: Bearer <token>"` | 放到请求头里 |
+| **Params 输入框** | `URL?key=value` | 直接拼到 URL 后 |
+| **右下角 Code 按钮** | Postman 自动生成 curl 命令 | 如图位置:Send 按钮右边 `</>` |
+
+### 具体例子对照
+
+**GET 请求**
+
+Postman:
+- 方法选 GET
+- URL 填 `http://localhost:8080/todos`
+- 点 Send
+
+curl:
+```bash
+curl http://localhost:8080/todos
+```
+
+**POST JSON**
+
+Postman:
+- 方法选 POST
+- URL 填 `http://localhost:8080/todos`
+- Headers: `Content-Type: application/json`
+- Body: raw + JSON `{"title":"学Go","done":false}`
+
+curl:
+```bash
+curl -X POST http://localhost:8080/todos \
+  -H "Content-Type: application/json" \
+  -d '{"title":"学Go","done":false}'
+```
+
+**带 Token**
+
+Postman:
+- Authorization: Bearer Token + 填入 token
+
+curl:
+```bash
+curl http://localhost:8080/api/me \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1..."
+```
+
+**带路径参数**
+
+Postman:
+- URL 填 `http://localhost:8080/todos/1`
+
+curl:
+```bash
+curl http://localhost:8080/todos/1
+```
+
+**带查询参数**
+
+Postman:
+- URL 填 `http://localhost:8080/todos?page=2&size=10`
+
+curl:
+```bash
+curl "http://localhost:8080/todos?page=2&size=10"
+```
+
+### 在 Postman 里一键转 curl
+
+Postman 的 Send 按钮右边有一个 `</>` Code 按钮:
+
+```
+Send ▸ Code ▸ cURL
+```
+
+点击后选中 `cURL`,Postman 会把当前请求自动转成 curl 命令,可以直接复制到终端里执行。
+
+这个功能在你学 API 调试时非常实用:
+- 先在 Postman 里调试到请求正常
+- 再点 Code 生成 curl 命令
+- 然后到终端 / 文档 / 脚本里复用
+
+---
+
+## 十二、学习建议
 
 入门阶段不要追求把 `curl` 所有参数都背下来。
 
@@ -371,7 +464,7 @@ curl -i http://localhost:8080/todos
 
 ---
 
-## 十二、本周配套练习
+## 十三、本周配套练习
 
 你可以按这个顺序自己练一遍:
 

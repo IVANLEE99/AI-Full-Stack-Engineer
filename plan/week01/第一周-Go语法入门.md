@@ -21,16 +21,16 @@
 
 你是前端出身,先建立这几个对照,后面学得快:
 
-| 你熟悉的 JS/TS | Go 的做法 | 关键差异 |
-|---|---|---|
-| `let/const`,类型可选 | 变量必须有明确类型 | Go 是强类型,编译期检查 |
-| `try/catch` 抛异常 | 函数返回 `error`,手动判断 | Go 没有异常,错误是值 |
-| `class` | `struct` + 方法 | Go 没有继承,用组合 |
-| `interface`(结构约束) | `interface`(方法集合) | Go 接口是隐式实现 |
-| `Array` | `slice` | slice 有长度和容量概念 |
-| `Object`/`Map` | `map` | map 需要初始化才能写 |
-| `async/await` | `goroutine`/`channel`(第7周) | 本周先不碰 |
-| `undefined/null` | 零值(zero value) | 每种类型都有默认零值 |
+| 你熟悉的 JS/TS　　　　| Go 的做法　　　　　　　　　　| 关键差异　　　　　　　 |
+| -----------------------| ------------------------------| ------------------------|
+| `let/const`,类型可选　| 变量必须有明确类型　　　　　 | Go 是强类型,编译期检查 |
+| `try/catch` 抛异常　　| 函数返回 `error`,手动判断　　| Go 没有异常,错误是值　 |
+| `class`　　　　　　　 | `struct` + 方法　　　　　　　| Go 没有继承,用组合　　 |
+| `interface`(结构约束) | `interface`(方法集合)　　　　| Go 接口是隐式实现　　　|
+| `Array`　　　　　　　 | `slice`　　　　　　　　　　　| slice 有长度和容量概念 |
+| `Object`/`Map`　　　　| `map`　　　　　　　　　　　　| map 需要初始化才能写　 |
+| `async/await`　　　　 | `goroutine`/`channel`(第7周) | 本周先不碰　　　　　　 |
+| `undefined/null`　　　| 零值(zero value)　　　　　　 | 每种类型都有默认零值　 |
 
 记住一句话:**Go 里 `if err != nil` 会到处出现,这不是啰嗦,是设计。**
 
@@ -908,16 +908,16 @@ curl localhost:8080/todos
 
 对照打卡,能独立做到才算过关:
 
-- [ ] 能解释 `go run` 和 `go build` 的区别
-- [ ] 能说清 `:=` 和 `var` 的使用场景
-- [ ] 能手写一个带多返回值 `(结果, error)` 的函数
-- [ ] 能定义 struct 并给它加值接收者/指针接收者方法
-- [ ] 能说清值接收者和指针接收者的区别
-- [ ] 会用 slice 的 `append` 和 map 的 `v, ok :=` 判断
-- [ ] 能解释 Go 接口的"隐式实现"
-- [ ] 能独立写出 `if err != nil` 错误处理
-- [ ] Todo API 能跑通,curl 能创建和查询
-- [ ] 能读懂 AI 生成的 Go 代码,并手动改一处
+- [✅] 能解释 `go run` 和 `go build` 的区别
+- [✅] 能说清 `:=` 和 `var` 的使用场景
+- [✅] 能手写一个带多返回值 `(结果, error)` 的函数
+- [✅] 能定义 struct 并给它加值接收者/指针接收者方法
+- [✅] 能说清值接收者和指针接收者的区别
+- [✅] 会用 slice 的 `append` 和 map 的 `v, ok :=` 判断
+- [✅] 能解释 Go 接口的"隐式实现"
+- [✅] 能独立写出 `if err != nil` 错误处理
+- [✅] Todo API 能跑通,curl 能创建和查询
+- [✅] 能读懂 AI 生成的 Go 代码,并手动改一处
 
 ---
 
