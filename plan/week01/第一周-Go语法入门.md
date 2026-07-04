@@ -888,6 +888,10 @@ curl -X POST localhost:8080/todos -d '{"title":"学Go","done":false}'
 curl localhost:8080/todos
 ```
 
+如果你对 `curl` 还不熟,建议配合阅读独立说明文档:
+
+- [curl 用法入门](curl用法入门.md)
+
 进阶(有余力再做):补上按 ID 查询、更新、删除,凑齐完整 CRUD。
 
 ---
