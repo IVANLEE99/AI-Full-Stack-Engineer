@@ -49,6 +49,30 @@ func todoHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(todo)
 
+	case http.MethodPut:
+		// TODO: 更新todo
+		var todo Todo
+		if err := json.NewDecoder(r.Body).Decode(&todo); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		mu.Lock()
+		todos[todo.ID] = todo
+		mu.Unlock()
+		json.NewEncoder(w).Encode(todo)
+
+	case http.MethodDelete:
+		// TODO: 删除todo
+		var todo Todo
+		if err := json.NewDecoder(r.Body).Decode(&todo); err != nil {
+			http.Error(w, "Invalid request body", http.StatusBadRequest)
+			return
+		}
+		mu.Lock()
+		delete(todos, todo.ID)
+		mu.Unlock()
+		w.WriteHeader(http.StatusNoContent)
+
 	default:
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 	}
