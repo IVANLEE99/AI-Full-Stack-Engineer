@@ -271,24 +271,391 @@ fmt.Println(user.Name)
 - `error` 就是一个接口,错误是普通的返回值
 - 用 `errors.Is` 判断错误类型
 
+**补充:Go 和 JavaScript 的方法调用有什么区别?**
+
+前端转 Go 的时候,这里特别容易混。你可以直接记住一句话:
+
+> **Go 的方法本质上是"函数 + 接收者",JavaScript 的方法本质上是"对象属性 + this 绑定"。**
+
+#### 1. 接收者 vs this
+
+**Go:方法有显式接收者**
+```go
+type User struct {
+    Name string
+}
+
+func (u User) GetName() string {
+    return u.Name
+}
+
+func (u *User) SetName(name string) {
+    u.Name = name
+}
+```
+- `(u User)`、`(u *User)` 叫**接收者**
+- Go 在定义方法时就明确这个方法属于谁
+- 值接收者和指针接收者行为不同
+
+**JavaScript:方法依赖 this**
+```js
+class User {
+    constructor(name) {
+        this.name = name
+    }
+
+    getName() {
+        return this.name
+    }
+
+    setName(name) {
+        this.name = name
+    }
+}
+```
+- JS 方法里常用 `this`
+- `this` 指向谁,取决于**调用方式**,不是定义位置
+
+#### 2. Go 要区分值接收者和指针接收者,JS 默认就能改对象
+
+**Go**
+```go
+type User struct {
+    Name string
+}
+
+func (u User) ChangeNameFail(name string) {
+    u.Name = name  // 改的是副本
+}
+
+func (u *User) ChangeNameOK(name string) {
+    u.Name = name  // 改的是原对象
+}
+```
+
+```go
+u := User{Name: "Alice"}
+u.ChangeNameFail("Bob")
+fmt.Println(u.Name) // Alice
+
+u.ChangeNameOK("Bob")
+fmt.Println(u.Name) // Bob
+```
+
+- 值接收者拿到的是副本
+- 指针接收者才能真正修改原对象
+
+**JavaScript**
+```js
+class User {
+    changeName(name) {
+        this.name = name
+    }
+}
+```
+- JS 对象本身就是引用语义的常见使用方式
+- 所以方法里改 `this.name`,通常就是直接改原对象
+
+#### 3. Go 的方法定义在结构体外面,JS 的方法通常写在类里面
+
+**Go**
+```go
+type User struct {
+    Name string
+}
+
+func (u User) Greet() string {
+    return "Hi, " + u.Name
+}
+```
+
+**JavaScript**
+```js
+class User {
+    constructor(name) {
+        this.name = name
+    }
+
+    greet() {
+        return `Hi, ${this.name}`
+    }
+}
+```
+
+- Go 的 `struct` 和方法是分开定义的
+- JS 的 `class` 通常把属性和方法写在一起
+
+#### 4. JavaScript 会有 this 丢失问题,Go 没这个坑
+
+**JavaScript**
+```js
+const u = new User("Alice")
+const greet = u.greet
+// greet() 这里可能报错,因为 this 丢了
+```
+
+要么手动绑定:
+```js
+const greet = u.greet.bind(u)
+```
+
+**Go**
+```go
+u := User{Name: "Alice"}
+greet := u.Greet
+greet() // 可以正常调用
+```
+
+- Go 不存在 JS 那种经典的 `this` 丢失问题
+- 因为接收者在方法调用这件事上更稳定、更明确
+
+#### 5. nil 接收者 vs null/undefined
+
+**Go**
+```go
+func (u *User) SafeName() string {
+    if u == nil {
+        return "unknown"
+    }
+    return u.Name
+}
+```
+
+```go
+var u *User
+fmt.Println(u.SafeName()) // unknown
+```
+
+- Go 允许你给 `nil` 指针调用方法
+- 但前提是方法内部自己处理 `nil`
+
+**JavaScript**
+```js
+let u = null
+u.getName() // 直接报错
+```
+
+- JS 里 `null` / `undefined` 调方法会直接出错
+
+#### 6. 最后用一张表记住
+
+| 对比项 | Go | JavaScript |
+|---|---|---|
+| 方法依赖什么 | 接收者 | `this` |
+| 绑定方式 | 定义时明确 | 调用时决定 |
+| 修改原对象 | 通常用指针接收者 | 直接改 `this` |
+| 方法定义位置 | struct 外 | class 内 |
+| 是否有 this 丢失问题 | 没有 | 有 |
+| nil/null 调用方法 | 可设计为安全 | 通常直接报错 |
+
+**记忆口诀**
+- Go: **方法 = 函数 + 接收者**
+- JS: **方法 = 对象属性 + this**
+
+如果你是前端出身,最值得先建立的直觉就是:
+- 在 Go 里,**想修改原对象,优先想到指针接收者**
+- 在 JS 里,**想避免 this 出问题,就注意调用方式或用箭头函数 / bind**
+
+#### 7. 值接收者和指针接收者到底怎么选?
+
+这是 Go 初学者最常问的问题。你不用一开始背太多规则,先记住这个最实用版本:
+
+> **不需要改数据时,优先考虑值接收者;需要改数据时,用指针接收者。**
+
+然后再补 3 条判断规则。
+
+**规则 1: 需要修改结构体内容 -> 用指针接收者**
+```go
+type User struct {
+    Name string
+}
+
+func (u *User) Rename(name string) {
+    u.Name = name
+}
+```
+
+因为你要改的是原对象,不是副本。
+
+**规则 2: 结构体比较大 -> 通常用指针接收者**
+```go
+type BigData struct {
+    A [1024]int
+}
+
+func (b *BigData) Process() {
+    // 避免每次调用都复制一大份数据
+}
+```
+
+因为值接收者会拷贝一份结构体,数据很大时会有额外开销。
+
+**规则 3: 如果一个类型有方法用了指针接收者,通常整个类型的方法都保持一致**
+```go
+type Counter struct {
+    N int
+}
+
+func (c *Counter) Inc() {
+    c.N++
+}
+
+func (c *Counter) Value() int {
+    return c.N
+}
+```
+
+虽然 `Value()` 看起来不修改数据,理论上可以写成值接收者,但实际开发里常常仍然统一写成指针接收者。
+
+这样做的好处:
+- 风格一致
+- 避免混淆
+- 方便后续扩展
+
+#### 8. 一个简单判断表
+
+| 场景 | 推荐 |
+|---|---|
+| 方法需要修改对象状态 | 指针接收者 |
+| 结构体很大,不想拷贝 | 指针接收者 |
+| 结构体里有 `sync.Mutex` 这类不能随便复制的字段 | 指针接收者 |
+| 只是读数据,结构体很小,语义上像副本 | 值接收者 |
+| 同一个类型已经大多用指针接收者 | 继续统一用指针接收者 |
+
+#### 9. 特别提醒: 含锁的结构体不要用值接收者
+
+比如:
+```go
+type Counter struct {
+    mu sync.Mutex
+    n  int
+}
+```
+
+这种类型如果你用值接收者,会把锁也一起复制,这是很危险的。
+
+所以这类结构体的方法一般都写成:
+```go
+func (c *Counter) Inc() {
+    c.mu.Lock()
+    defer c.mu.Unlock()
+    c.n++
+}
+```
+
+#### 10. 入门阶段的实用建议
+
+如果你现在还拿不准,可以先这样用:
+- **结构体方法默认优先考虑指针接收者**
+- 只有在你明确知道"这个方法不改数据 + 结构体很小 + 值语义更合理"时,再用值接收者
+
+这样对初学者最稳,也更接近很多真实项目里的写法。
+
 ---
 
 ### Day 6:defer + 项目实战(Todo API)
 
 **defer(延迟执行,常用于资源清理)**
+
+#### 1. 基本概念
+`defer` 用于延迟执行函数调用,延迟的函数会在外层函数返回之前执行,无论函数正常返回还是 panic。
+
+```go
+func deferExample() {
+    fmt.Println("开始执行")
+    defer fmt.Println("defer 语句执行")  // 最后执行
+    fmt.Println("函数执行完毕")
+}
+// 输出顺序: 开始执行 -> 函数执行完毕 -> defer 语句执行
+```
+
+#### 2. 执行顺序(后进先出 LIFO)
+多个 defer 语句按照**后进先出**的顺序执行:
+
+```go
+defer fmt.Println("第一个 defer")
+defer fmt.Println("第二个 defer")
+defer fmt.Println("第三个 defer")
+// 执行顺序: 第三个 -> 第二个 -> 第一个
+```
+
+#### 3. 常见应用场景
+
+**文件操作(资源清理)**
 ```go
 func readFile() {
-    file := openFile()
-    defer file.Close()   // 函数结束时自动执行,不管从哪里 return
+    file, err := os.Open("file.txt")
+    if err != nil {
+        return
+    }
+    defer file.Close()   // 确保文件一定会关闭
 
     // ... 处理文件
-}   // 到这里 file.Close() 才执行
+}
 ```
+
+**互斥锁(确保释放)**
+```go
+func updateData() {
+    mu.Lock()
+    defer mu.Unlock()   // 确保锁一定会释放
+
+    // ... 修改数据
+}
+```
+
+**错误恢复(panic/recover)**
+```go
+func safeCall() {
+    defer func() {
+        if r := recover(); r != nil {
+            fmt.Println("从 panic 中恢复:", r)
+        }
+    }()
+
+    // ... 可能 panic 的代码
+}
+```
+
+**性能测量**
+```go
+func measureTime() {
+    start := time.Now()
+    defer func() {
+        fmt.Printf("执行时间: %v\n", time.Since(start))
+    }()
+
+    // ... 业务逻辑
+}
+```
+
+#### 4. 变量求值时机(重要)
+
+```go
+// 普通 defer: 参数在 defer 语句处立即求值
+x := 1
+defer fmt.Println("x =", x)  // 输出 1,不是 2
+x = 2
+
+// 匿名函数 defer: 变量在函数返回时求值
+y := 1
+defer func() {
+    fmt.Println("y =", y)  // 输出 2
+}()
+y = 2
+```
+
+#### 5. 注意事项
+- defer 会增加少量性能开销,在性能敏感的循环中要谨慎使用
+- defer 的参数在 defer 语句处立即求值
+- 匿名函数中的变量会在函数返回时求值
+- defer 常用于确保资源一定被释放,防止资源泄漏
 
 **Day 6-7 实战:Todo API**
 
 这是本周的产出。用标准库 `net/http` 做,先不引 Gin(第2周再学)。
 
+#### 先看完整代码
 ```go
 package main
 
@@ -351,6 +718,166 @@ func main() {
     http.ListenAndServe(":8080", nil)
 }
 ```
+
+#### 逐段解释
+
+**1. Todo 结构体**
+```go
+type Todo struct {
+    ID    int    `json:"id"`
+    Title string `json:"title"`
+    Done  bool   `json:"done"`
+}
+```
+- 这是 Todo 数据的结构定义
+- `ID` 是唯一标识
+- `Title` 是待办内容
+- `Done` 表示是否完成
+- `` `json:"id"` `` 这种写法叫 **JSON 标签**,表示结构体转成 JSON 时字段名叫什么
+
+例如这个结构体会被编码成:
+```json
+{"id":1,"title":"学Go","done":false}
+```
+
+**2. 内存存储**
+```go
+var (
+    todos  = make(map[int]Todo)
+    nextID = 1
+    mu     sync.Mutex
+)
+```
+- `todos` 是一个 `map[int]Todo`,键是 ID,值是 Todo
+- `nextID` 用来模拟自增主键,每创建一个 Todo 就加 1
+- `mu` 是互斥锁,因为 Go 的 map 不能被多个请求同时安全读写,否则可能报错
+
+**3. 处理函数入口**
+```go
+func todosHandler(w http.ResponseWriter, r *http.Request) {
+```
+- `w` 用来写响应给客户端
+- `r` 表示客户端发过来的请求
+- 这个函数负责处理 `/todos` 路由的所有请求
+
+**4. 设置响应格式**
+```go
+w.Header().Set("Content-Type", "application/json")
+```
+- 告诉客户端:我返回的是 JSON 数据
+- 前后端联调时这是很常见的一步
+
+**5. 用请求方法区分功能**
+```go
+switch r.Method {
+```
+这里根据 HTTP 方法走不同逻辑:
+- `GET /todos` -> 查询所有 Todo
+- `POST /todos` -> 创建一个 Todo
+- 其他方法 -> 返回不支持
+
+**6. GET:查询列表**
+```go
+case http.MethodGet:
+    mu.Lock()
+    list := make([]Todo, 0, len(todos))
+    for _, t := range todos {
+        list = append(list, t)
+    }
+    mu.Unlock()
+    json.NewEncoder(w).Encode(list)
+```
+这一段做了 4 件事:
+
+- `mu.Lock()`：加锁,防止别的请求同时修改 map
+- `make([]Todo, 0, len(todos))`：创建一个切片,准备装所有 Todo
+- `for _, t := range todos`：遍历 map,把每个 Todo 放进切片
+- `json.NewEncoder(w).Encode(list)`：把切片转成 JSON 返回给客户端
+
+为什么不直接返回 map?
+- 因为接口通常更希望返回数组列表
+- 切片也更符合前端接收列表数据的习惯
+
+**7. POST:创建 Todo**
+```go
+case http.MethodPost:
+    var t Todo
+    if err := json.NewDecoder(r.Body).Decode(&t); err != nil {
+        http.Error(w, "参数错误", http.StatusBadRequest)
+        return
+    }
+```
+这一步是把客户端传来的 JSON 请求体解析到 `t` 里。
+
+例如前端传:
+```json
+{"title":"学Go","done":false}
+```
+解析后就会变成一个 Go 结构体。
+
+如果 JSON 格式错误,就会进入:
+```go
+http.Error(w, "参数错误", http.StatusBadRequest)
+return
+```
+- 返回 400 状态码
+- 提前结束函数
+
+接着是保存数据:
+```go
+mu.Lock()
+t.ID = nextID
+nextID++
+todos[t.ID] = t
+mu.Unlock()
+json.NewEncoder(w).Encode(t)
+```
+意思是:
+- 加锁
+- 给新 Todo 分配 ID
+- `nextID` 自增,留给下一个 Todo 用
+- 把 Todo 放进 map
+- 解锁
+- 把新创建的数据原样返回给客户端
+
+**8. default:不支持的方法**
+```go
+default:
+    http.Error(w, "方法不支持", http.StatusMethodNotAllowed)
+```
+如果用户发的是 `PUT`、`DELETE` 等当前还没实现的方法,就返回 405。
+
+**9. main 函数:启动 HTTP 服务**
+```go
+func main() {
+    http.HandleFunc("/todos", todosHandler)
+    fmt.Println("服务启动在 :8080")
+    http.ListenAndServe(":8080", nil)
+}
+```
+- `http.HandleFunc("/todos", todosHandler)`：把 `/todos` 路径绑定到这个处理函数
+- `fmt.Println("服务启动在 :8080")`：打印启动日志
+- `http.ListenAndServe(":8080", nil)`：启动 Web 服务,监听本机 8080 端口
+
+启动后你就可以访问:
+- `GET http://localhost:8080/todos`
+- `POST http://localhost:8080/todos`
+
+#### 这段代码你要重点学会什么
+- `struct` 如何表示接口返回的数据结构
+- `map` 如何临时充当内存数据库
+- `sync.Mutex` 为什么能保护共享数据
+- `http.HandleFunc` 如何注册路由
+- `r.Method` 如何区分不同请求
+- `json.NewDecoder` / `json.NewEncoder` 如何处理 JSON
+- `if err != nil` 如何做 Go 风格错误处理
+
+#### 这段代码的局限
+这个版本是入门版,有几个明显限制:
+- 数据只存在内存里,程序一重启就丢了
+- 只支持列表和创建,还不支持按 ID 查询、更新、删除
+- `mu.Lock()` / `mu.Unlock()` 可以进一步改成 `defer mu.Unlock()` 让代码更安全
+- `http.ListenAndServe` 的错误没有处理,更严谨的写法应该判断返回值
 
 **测试**
 ```bash
