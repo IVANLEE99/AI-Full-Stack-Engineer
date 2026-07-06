@@ -11,13 +11,138 @@
 
 ## 今日目标
 
-独立追踪一条 CRUD 并画图。
+独立选择一个门店或商品接口，追踪完整 CRUD 链路，画出从路由、Controller、Validate、Service、Model/ModelJoin 到响应返回的流程图。
+
+今天你要真正掌握这一句话：
+
+> 能独立追踪 TP8 CRUD 链路，说明你已经能把 Yii2 阶段积累的业务域阅读方法迁移到新框架；以后遇到 Laravel、Symfony、TP8 也能按同一套分层思维拆解。
+
+---
+
+## 0. 今日学习路线
+
+建议按下面顺序学习：
+
+1. 选择一个门店或商品接口
+2. 找到对应路由
+3. 找到 Controller action
+4. 找到 Validate scene
+5. 找到 Service 方法
+6. 找到 Model / ModelJoin 查询或写入
+7. 记录入参、出参、错误返回
+8. 画接口流程图
+9. 用 AI Review 检查链路是否完整
 
 ---
 
 ## 1. 学习内容
 
-- 选门店或商品接口
+### 1.1 CRUD 是什么？
+
+CRUD 指：
+
+| 操作 | 含义 | 常见接口 |
+|---|---|---|
+| Create | 创建 | 新增门店 |
+| Read | 查询 | 门店列表/详情 |
+| Update | 更新 | 编辑门店 |
+| Delete | 删除 | 删除/禁用门店 |
+
+后台管理系统大量接口都是 CRUD。
+
+---
+
+### 1.2 TP8 CRUD 链路模板
+
+```text
+前端后台页面
+  ↓
+HTTP 请求
+  ↓
+route 路由
+  ↓
+middleware 鉴权/权限
+  ↓
+Controller action
+  ↓
+Validate scene
+  ↓
+Service
+  ↓
+Model / ModelJoin
+  ↓
+统一响应
+```
+
+---
+
+### 1.3 追踪时要记录什么？
+
+| 层级 | 记录内容 |
+|---|---|
+| Route | URL、HTTP 方法 |
+| Middleware | 是否需要登录、权限 |
+| Controller | action 名、取参、返回 |
+| Validate | 使用哪个 scene |
+| Service | 方法职责、业务规则 |
+| Model | 表、字段、查询条件 |
+| Response | code/data/msg 格式 |
+
+---
+
+### 1.4 CRUD 风险点
+
+| 操作 | 风险 | 关注点 |
+|---|---|---|
+| Create | 重复创建、非法字段 | 唯一性、Validate |
+| Read | 越权查看、查询慢 | 权限过滤、索引 |
+| Update | 越权修改、脏数据 | 权限、字段白名单 |
+| Delete | 误删除 | 软删除、二次确认 |
+
+门店接口可能还要关注：
+
+- 商户归属
+- 门店状态
+- 经纬度合法性
+- 手机号/地址隐私
+- 列表分页性能
+
+---
+
+### 1.5 流程图模板
+
+```text
+Route: GET /admin/store/index
+  ↓
+StoreController::index()
+  ↓
+OfflineStore Validate scene:list
+  ↓
+StoreService::list($params)
+  ↓
+StoreModelJoin::listWithMerchant($filters)
+  ↓
+返回分页 data
+```
+
+按你选择的真实接口修正。
+
+---
+
+### 1.6 迁移已有业务域思维
+
+你已经学过：
+
+- BFF 路由表
+- 订单时序图
+- 支付状态机
+- 售后流程图
+
+现在读 TP8 CRUD，也可以用同样方法：
+
+```text
+入口 → 校验 → 业务 → 数据 → 响应 → 风险
+```
 
 ---
 
@@ -25,36 +150,84 @@
 
 本日无指定源码阅读，重点完成练习与复盘。
 
+建议选择：
+
+- 门店列表
+- 门店新增
+- 门店编辑
+- 商品列表
+- 商品状态切换
+
+记录：
+
+| 层级 | 文件/方法 | 记录 |
+|---|---|---|
+| Route |  |  |
+| Controller |  |  |
+| Validate |  |  |
+| Service |  |  |
+| Model |  |  |
+
 ---
 
 ## 3. 练习任务
 
-- 追踪完整 CRUD
-- 画接口流程图
+### 练习 1：追踪完整 CRUD
+
+选择一个接口，记录全链路。
+
+### 练习 2：画接口流程图
+
+要求包含 Route、Controller、Validate、Service、Model、Response。
+
+### 练习 3：标注风险
+
+列出该接口至少 5 个风险点。
 
 ---
 
 ## 4. JS/Node.js 类比
 
-- CRUD 链路≈联调文档
+- CRUD 链路 ≈ 联调文档
+- Controller ≈ route handler
+- Validate ≈ DTO/Zod schema
+- Service ≈ use case service
+- ModelJoin ≈ repository query object
 
 ---
 
 ## 5. AI Review 提问
 
-- 链路完整吗？
+```text
+我正在追踪 store-api 的一个 CRUD 接口。
+我已经记录 Route、Controller、Validate scene、Service、Model/ModelJoin、Response，并画了流程图。
+请你检查：
+1. 链路是否完整？
+2. 分层职责是否清楚？
+3. 是否遗漏权限、中间件、Validate 或响应封装？
+4. 这个接口有哪些性能和越权风险？
+5. 这张图是否适合联调和新人 onboarding？
+```
 
 ---
 
 ## 6. 今日产出
 
-- CRUD 流程图
+- [ ] CRUD 全链路记录
+- [ ] 接口流程图
+- [ ] 入参/出参表
+- [ ] 风险点清单
+- [ ] AI Review 记录
 
 ---
 
 ## 7. 今日完成标准
 
-- [ ] 能独立追踪
+- [ ] 能独立追踪 TP8 CRUD 链路
+- [ ] 能画接口流程图
+- [ ] 能说明每层职责
+- [ ] 能标注 Validate 和 ModelJoin
+- [ ] 能列出至少 5 个接口风险点
 
 ---
 
