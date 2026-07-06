@@ -11,14 +11,166 @@
 
 ## 今日目标
 
-理解 RegisterService 与 nodes 目录。
+理解 `RegisterService` 与 `nodes` 目录如何把注册流程拆成多个节点，掌握注册链路中的参数校验、重复用户检查、密码/验证码处理、创建用户、生成 token 和缓存写入。
+
+今天你要真正掌握这一句话：
+
+> 注册不是简单 insert 用户表，而是一条身份创建流水线：每个 Node 负责一个安全步骤，任何一步失败都应该中断，避免重复注册、弱密码、验证码绕过或脏用户数据。
+
+---
+
+## 0. 今日学习路线
+
+建议按下面顺序学习：
+
+1. 回顾 Week 07 的 PayService Node 链思想
+2. 理解注册为什么也适合拆成 Node 链
+3. 打开 `RegisterService.php`，找到 NodeExecutionEngine
+4. 列出注册前 5 个 Node
+5. 记录每个 Node 读取和写入的 Context 字段
+6. 画注册 Node 顺序图
+7. 标注重复手机号/邮箱、验证码、密码、隐私数据风险
+8. 用 Express middleware 管道做类比
+9. 用 AI Review 检查 Node 顺序是否合理
 
 ---
 
 ## 1. 学习内容
 
-- 复习 NodeExecutionEngine
-- 读 RegisterService
+### 1.1 注册流程为什么复杂？
+
+用户注册可能包含：
+
+- 参数校验
+- 手机号/邮箱格式校验
+- 验证码校验
+- 密码强度检查
+- 检查用户是否已存在
+- 创建用户记录
+- 初始化用户资料
+- 生成 token/session
+- 写入 Redis 缓存
+- 发送欢迎通知或埋点事件
+
+如果都写在一个大函数里，后续很难维护。
+
+---
+
+### 1.2 注册 Node 链怎么理解？
+
+注册链可以理解成：
+
+```text
+RegisterService
+  ↓
+NodeExecutionEngine
+  ↓
+ValidateInputNode
+  ↓
+CheckUserExistsNode
+  ↓
+VerifyCodeNode
+  ↓
+CreateUserNode
+  ↓
+GenerateTokenNode
+```
+
+实际 Node 名称以源码为准。
+
+每个 Node 做一件事：
+
+| Node | 职责 |
+|---|---|
+| 参数校验 Node | 检查手机号、邮箱、密码、验证码是否存在 |
+| 重复用户检查 Node | 检查手机号/邮箱是否已注册 |
+| 验证码 Node | 校验短信/邮箱验证码 |
+| 创建用户 Node | 写用户表、用户资料表 |
+| token Node | 生成登录态并返回 |
+
+---
+
+### 1.3 注册 Context 放什么？
+
+Context 可能包含：
+
+| 字段 | 含义 |
+|---|---|
+| `phone` | 手机号 |
+| `email` | 邮箱 |
+| `password` | 密码或密码 hash 前数据 |
+| `verify_code` | 验证码 |
+| `register_source` | 注册来源 |
+| `user_id` | 创建后的用户 ID |
+| `token` | 登录 token |
+| `profile` | 初始用户资料 |
+
+注意：密码、验证码、token 都是敏感字段，日志中必须谨慎处理。
+
+---
+
+### 1.4 Node 顺序为什么重要？
+
+错误顺序会带来风险。
+
+例如：
+
+```text
+先创建用户，再校验验证码
+```
+
+这会导致验证码失败也可能留下脏用户。
+
+更合理的顺序：
+
+```text
+参数校验 → 验证码校验 → 重复用户检查 → 创建用户 → 生成 token
+```
+
+有些项目会先查重复用户再校验验证码，具体要看业务和防刷策略。
+
+---
+
+### 1.5 注册链路的安全风险
+
+| 风险 | 说明 | 应对 |
+|---|---|---|
+| 重复注册 | 同一手机号/邮箱创建多个用户 | 唯一索引 + Node 检查 |
+| 验证码暴力破解 | 重复尝试验证码 | 限流 + 过期 + 次数限制 |
+| 弱密码 | 容易被撞库 | 密码强度规则 |
+| 明文密码 | 数据泄露严重 | hash 存储 |
+| 日志泄露 | 打印验证码/token | 日志脱敏 |
+| 注册刷量 | 机器人注册 | 验证码、风控、频率限制 |
+
+---
+
+### 1.6 注册成功后做什么？
+
+注册成功后通常会：
+
+- 返回 `user_id`
+- 返回 token/session
+- 初始化用户资料
+- 写用户缓存
+- 记录注册来源
+- 发送欢迎事件
+- 触发新用户权益
+
+这些后续动作有些可以同步，有些适合 MQ 异步。
+
+---
+
+### 1.7 Node.js 类比
+
+Express middleware：
+
+```js
+validateInput → verifyCode → checkUserExists → createUser → issueToken
+```
+
+每个 middleware 读写 `req.context`，失败时中断。
+
+PHP 注册 Node 链类似。
 
 ---
 
@@ -28,36 +180,86 @@
 
 > 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
 
+阅读记录：
+
+| Node | 输入 | 输出 | 职责 | 失败时提示 |
+|---|---|---|---|---|
+|  |  |  |  |  |
+
 ---
 
 ## 3. 练习任务
 
-- 列出注册前 5 个 Node
-- 画注册 Node 顺序图
+### 练习 1：列出注册前 5 个 Node
+
+记录名称、职责、输入和输出。
+
+### 练习 2：画注册 Node 顺序图
+
+```text
+RegisterService
+  ↓
+ValidateInputNode
+  ↓
+VerifyCodeNode
+  ↓
+CheckUserExistsNode
+  ↓
+CreateUserNode
+  ↓
+GenerateTokenNode
+```
+
+按源码实际顺序修正。
+
+### 练习 3：标注敏感字段
+
+列出 Context 中哪些字段不能打印日志。
 
 ---
 
 ## 4. JS/Node.js 类比
 
-- 注册链≈多步 middleware
+- 注册链 ≈ 多步 middleware
+- Context ≈ `req.context`
+- Node 失败 ≈ throw / next(error)
+- CreateUserNode ≈ userRepository.create
+- GenerateTokenNode ≈ authService.issueToken
 
 ---
 
 ## 5. AI Review 提问
 
-- Node 顺序正确吗？
+```text
+我正在学习 RegisterService 注册 Node 链。
+我已经列出前 5 个 Node、Context 字段和注册顺序图。
+请你检查：
+1. Node 顺序是否合理？
+2. 哪些步骤必须在创建用户之前完成？
+3. 重复注册如何防止？
+4. 哪些字段必须脱敏或不能写日志？
+5. 与 Express middleware 管道的类比是否准确？
+```
 
 ---
 
 ## 6. 今日产出
 
-- 注册 Node 图
+- [ ] 注册 Node 图
+- [ ] 5 个 Node 职责表
+- [ ] 注册 Context 字段表
+- [ ] 注册安全风险清单
+- [ ] AI Review 记录
 
 ---
 
 ## 7. 今日完成标准
 
-- [ ] 能列 5 个 Node
+- [ ] 能列 5 个注册 Node
+- [ ] 能解释 Node 顺序为什么重要
+- [ ] 能说明重复注册如何防止
+- [ ] 能标注密码、验证码、token 等敏感字段
+- [ ] 能用 middleware 类比注册链
 
 ---
 
