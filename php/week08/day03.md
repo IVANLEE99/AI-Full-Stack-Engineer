@@ -11,14 +11,178 @@
 
 ## 今日目标
 
-分析 RefundVerifyNode 与 MQ 节点。
+分析 `RefundVerifyNode` 与 `AddRefundHandleMqNode`，理解退款为什么必须做幂等设计，以及退款请求、退款处理、退款 MQ 消费各自应该如何避免重复执行。
+
+今天你要真正掌握这一句话：
+
+> 退款幂等的目标是：同一个退款请求无论被提交、投递、消费多少次，都只能产生一次真实退款动作，不能重复退钱、重复改状态、重复发通知。
+
+---
+
+## 0. 今日学习路线
+
+建议按下面顺序学习：
+
+1. 先理解什么是幂等性
+2. 理解退款为什么比普通接口更需要幂等
+3. 阅读 `RefundVerifyNode` 的校验职责
+4. 阅读 `AddRefundHandleMqNode` 的 MQ 投递职责
+5. 找退款唯一键：refund_id、refund_no、request_id 或 out_refund_no
+6. 画退款请求 → 校验 → MQ → 消费者 → 第三方退款的流程
+7. 标注重复提交、重复消息、重复回调的处理方式
+8. 对比 Redis `SET NX`、数据库唯一键、业务状态机
+9. 用 AI Review 检查重复退款是否被拦截
 
 ---
 
 ## 1. 学习内容
 
-- 理解幂等性概念
-- 阅读退款相关 Node
+### 1.1 什么是幂等？
+
+幂等就是：
+
+```text
+同一个操作执行一次和执行多次，最终结果一样。
+```
+
+退款场景：
+
+```text
+第一次请求退款：创建退款单并发起退款
+第二次相同请求：发现已存在退款单，不能再创建第二笔真实退款
+```
+
+小白重点：幂等不是“不允许重复请求”，而是“重复请求不会造成重复业务结果”。
+
+---
+
+### 1.2 退款为什么必须幂等？
+
+退款涉及资金，重复执行风险非常高。
+
+| 重复场景 | 风险 |
+|---|---|
+| 用户重复点击退款 | 创建多笔退款 |
+| 网关超时重试 | 同一退款请求进入多次 |
+| MQ 重复投递 | 消费者重复调用第三方退款 |
+| 第三方重复回调 | 重复更新状态/发通知 |
+| 管理后台误操作 | 同一订单重复退款 |
+
+退款幂等的底线：
+
+```text
+同一订单、同一退款原因、同一退款金额、同一退款单，只能真实退款一次。
+```
+
+---
+
+### 1.3 `RefundVerifyNode` 可能负责什么？
+
+`RefundVerifyNode` 通常是退款链路中的校验节点。
+
+它可能检查：
+
+- 订单是否存在
+- 订单是否已支付
+- 是否允许退款
+- 退款金额是否小于等于可退金额
+- 是否已经存在处理中/成功的退款单
+- 用户是否有权限退款
+- 退款状态是否允许继续
+
+伪代码：
+
+```php
+<?php
+
+if ($refundRepository->existsProcessingRefund($orderId)) {
+    return NodeResult::fail('退款处理中，请勿重复提交');
+}
+```
+
+---
+
+### 1.4 `AddRefundHandleMqNode` 可能负责什么？
+
+退款不一定在用户请求里同步完成，可能先创建退款单，再投递 MQ：
+
+```text
+创建退款单
+  ↓
+投递 refund.handle 消息
+  ↓
+消费者调用第三方退款 API
+```
+
+`AddRefundHandleMqNode` 可能负责：
+
+- 构造退款处理消息
+- 写入 `refund_id` / `refund_no`
+- 投递 MQ
+- 记录投递结果
+- 投递失败时返回错误或等待重试
+
+---
+
+### 1.5 退款幂等的常见手段
+
+| 手段 | 作用 |
+|---|---|
+| 业务唯一键 | 如 `refund_no`、`out_refund_no` |
+| 数据库唯一索引 | 防止并发创建重复退款单 |
+| Redis SET NX | 防止短时间重复提交 |
+| 状态机 | 已成功退款不能再次处理 |
+| MQ 消费记录 | 同一 message/event 只消费一次 |
+| 第三方幂等 key | 调用支付平台退款 API 时传唯一退款号 |
+
+最好不要只依赖一种手段，资金场景通常多层兜底。
+
+---
+
+### 1.6 退款 MQ 消费者如何幂等？
+
+消费者收到消息：
+
+```json
+{
+  "event_id": "evt_001",
+  "refund_id": 3001,
+  "refund_no": "R20260001"
+}
+```
+
+处理前先检查：
+
+```text
+这个 refund_id 是否已经成功处理？
+这个 event_id 是否消费过？
+退款单状态是否仍是 pending/processing？
+```
+
+如果已经处理过：
+
+```text
+直接 ack，不重复调用第三方退款。
+```
+
+---
+
+### 1.7 Node.js 类比
+
+Node 中常见：
+
+```js
+const ok = await redis.set(`refund:${refundNo}`, '1', 'NX', 'EX', 60);
+if (!ok) throw new Error('请勿重复退款');
+```
+
+或者数据库唯一键：
+
+```text
+UNIQUE(order_id, refund_no)
+```
+
+PHP 项目思想一样：Redis 防并发，数据库唯一键防最终重复，状态机防错误流转。
 
 ---
 
@@ -26,37 +190,86 @@
 
 本日无指定源码阅读，重点完成练习与复盘。
 
+建议查找：
+
+- `RefundVerifyNode`
+- `AddRefundHandleMqNode`
+- 退款 Repository / Model
+- 退款状态常量
+- 退款 MQ 消费者
+
+记录：
+
+| 节点/文件 | 职责 | 幂等点 | 风险 |
+|---|---|---|---|
+| `RefundVerifyNode` |  |  |  |
+| `AddRefundHandleMqNode` |  |  |  |
+
 ---
 
 ## 3. 练习任务
 
-- 读 RefundVerifyNode
-- 读 AddRefundHandleMqNode
-- 写 1 页退款幂等分析
+### 练习 1：读 `RefundVerifyNode`
+
+记录它校验了哪些字段、状态和重复退款条件。
+
+### 练习 2：读 `AddRefundHandleMqNode`
+
+记录它投递了什么消息、route_key 是什么、消息里有哪些字段。
+
+### 练习 3：写 1 页退款幂等分析
+
+至少回答：
+
+- 重复退款从哪里来？
+- 用什么唯一键防重复？
+- Redis、数据库、状态机分别负责什么？
+- MQ 重复消费怎么办？
 
 ---
 
 ## 4. JS/Node.js 类比
 
-- 幂等≈Redis SET NX + 业务唯一键
+- 幂等 ≈ Redis `SET NX` + 业务唯一键
+- 退款单号 ≈ idempotency key
+- MQ 重复消费 ≈ worker job retry
+- 消费记录 ≈ processed_events table
+- 状态机 ≈ refund status guard
 
 ---
 
 ## 5. AI Review 提问
 
-- 重复退款如何拦截？
+```text
+我正在分析退款幂等设计。
+我已经阅读 RefundVerifyNode 和 AddRefundHandleMqNode，并整理了退款请求、MQ 投递、消费者处理的幂等点。
+请你检查：
+1. 重复退款会从哪些路径进入？
+2. 我的幂等 key 设计是否合理？
+3. Redis、数据库唯一键、状态机如何配合？
+4. MQ 重复消费如何拦截？
+5. 真实退款系统最容易遗漏哪些资金风险？
+```
 
 ---
 
 ## 6. 今日产出
 
-- 幂等分析文档
+- [ ] `RefundVerifyNode` 阅读笔记
+- [ ] `AddRefundHandleMqNode` 阅读笔记
+- [ ] 退款幂等分析文档
+- [ ] 退款 MQ 消费幂等表
+- [ ] AI Review 记录
 
 ---
 
 ## 7. 今日完成标准
 
 - [ ] 能解释幂等设计
+- [ ] 能说明退款为什么必须幂等
+- [ ] 能列出至少 3 种防重复退款手段
+- [ ] 能解释 MQ 重复消费如何处理
+- [ ] 能写出 1 页退款幂等分析
 
 ---
 
