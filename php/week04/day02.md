@@ -324,6 +324,286 @@ g_config('site', 'show_coupon', false)
 
 ---
 
+### 1.8 小白实操：把配置 API 当成“前端取设置的接口”
+
+你可以先不要急着理解框架细节，先把今天内容想成一个生活场景：
+
+```text
+前端页面 = 一个需要装修的店铺
+配置 API = 店铺向总部询问“今天要挂什么招牌、开哪些入口、显示哪些活动”
+后端配置 = 总部保存的运营设置
+```
+
+如果前端每个页面都把站点名称、logo、客服电话、支付开关写死，就会出现两个问题：
+
+1. 运营想改内容时必须找开发改代码。
+2. 不同前端页面可能写出不一致的配置。
+
+所以后端会提供一个配置 API，让前端统一请求：
+
+```text
+前端：请告诉我当前站点配置
+后端：返回 site_name、logo、show_coupon、support_phone 等字段
+前端：根据这些字段渲染页面
+```
+
+---
+
+### 1.9 第一步：先找“接口入口”
+
+读 `ConfigController` 时，第一件事不是理解每一行代码，而是找到入口方法。
+
+常见入口长这样：
+
+```php
+<?php
+
+class ConfigController extends Controller
+{
+    public function actionIndex(): array
+    {
+        // ...
+    }
+
+    public function actionSite(): array
+    {
+        // ...
+    }
+}
+```
+
+在 Yii2 风格里，`actionXxx()` 通常对应一个接口动作。你可以这样记：
+
+| Controller 方法 | 可能对应的接口含义 |
+|---|---|
+| `actionIndex()` | 默认配置接口 |
+| `actionSite()` | 站点配置接口 |
+| `actionConfig()` | 通用配置接口 |
+| `actionSetting()` | 设置接口 |
+
+小白读法：
+
+```text
+看到 action 开头的方法 → 先把它当成一个 HTTP 接口入口。
+```
+
+你需要做的笔记不是“这个文件有多少行”，而是：
+
+```text
+入口方法：actionSite
+它返回什么：站点配置
+它调用谁：ConfigService 或 Helper
+```
+
+---
+
+### 1.10 第二步：看 Controller 里面有没有“业务拼装”
+
+假设你看到：
+
+```php
+<?php
+
+public function actionSite(): array
+{
+    $data = $this->configService->getSiteConfig();
+
+    return $this->success($data);
+}
+```
+
+这段代码要拆成三句话理解：
+
+1. `actionSite()`：这是配置接口入口。
+2. `$this->configService->getSiteConfig()`：真正组织配置数据的是 Service。
+3. `$this->success($data)`：把结果包装成统一响应返回给前端。
+
+如果你是 PHP 小白，先不要纠结 `$this` 的所有细节。今天只要记住：
+
+```text
+$this->configService 表示当前 Controller 里持有的配置服务对象。
+调用 getSiteConfig() 表示让 Service 去准备配置数据。
+```
+
+---
+
+### 1.11 第三步：跳到 Service，看它怎么组织字段
+
+Service 里可能会有类似代码：
+
+```php
+<?php
+
+final class ConfigService
+{
+    public function getSiteConfig(): array
+    {
+        return [
+            'site_name' => g_config('site', 'name', '默认商城'),
+            'logo' => g_config('site', 'logo', ''),
+            'show_coupon' => g_config('site', 'show_coupon', false),
+            'support_phone' => g_config('site', 'support_phone', '400-000-0000'),
+        ];
+    }
+}
+```
+
+你要一行一行翻译成中文：
+
+| 返回给前端的字段 | 后端读取方式 | 中文含义 |
+|---|---|---|
+| `site_name` | `g_config('site', 'name', '默认商城')` | 站点名称 |
+| `logo` | `g_config('site', 'logo', '')` | 站点 logo |
+| `show_coupon` | `g_config('site', 'show_coupon', false)` | 是否展示优惠券入口 |
+| `support_phone` | `g_config('site', 'support_phone', '400-000-0000')` | 客服电话 |
+
+注意：前端看到的是 `site_name`，后端配置里可能叫 `site.name`。这两者不一定完全同名。
+
+---
+
+### 1.12 第四步：理解统一 JSON 响应
+
+很多企业项目不会直接返回纯数组，而是包一层统一格式：
+
+```json
+{
+  "code": 0,
+  "message": "success",
+  "data": {
+    "site_name": "Demo Mall",
+    "logo": "https://example.com/logo.png",
+    "show_coupon": false,
+    "support_phone": "400-000-0000"
+  }
+}
+```
+
+你要能分清：
+
+| 字段 | 作用 |
+|---|---|
+| `code` | 告诉前端请求是否成功 |
+| `message` | 提示信息 |
+| `data` | 真正的业务数据 |
+
+所以这句：
+
+```php
+<?php
+
+return $this->success($data);
+```
+
+可以理解成：
+
+```text
+把业务数据 data 包装成统一成功响应返回给前端。
+```
+
+---
+
+### 1.13 第五步：把链路完整说出来
+
+今天最重要的能力是：你能不能用自己的话讲出完整链路。
+
+推荐背诵这个模板，但要理解每个词：
+
+```text
+前端请求配置接口，例如 /site/config。
+请求进入 ConfigController 的某个 action 方法。
+Controller 不直接拼复杂业务，而是调用 ConfigService。
+ConfigService 通过 g_config() 读取 site/pay/order 等模块配置。
+读取到的配置被组织成前端需要的字段。
+Controller 用 success() 包装成统一 JSON 返回给前端。
+前端根据 show_coupon、logo、site_name 等字段控制页面展示。
+```
+
+如果你能把这段话讲清楚，Day 02 就已经达标一半。
+
+---
+
+### 1.14 手把手练习：模拟一个配置 API
+
+你可以在脑中模拟，不一定要真的运行。
+
+第一步，假设前端需要这些配置：
+
+```text
+站点名称
+logo
+是否显示优惠券入口
+客服电话
+```
+
+第二步，Service 组织数据：
+
+```php
+<?php
+
+function getSiteConfig(): array
+{
+    return [
+        'site_name' => g_config('site', 'name', '默认商城'),
+        'logo' => g_config('site', 'logo', ''),
+        'show_coupon' => g_config('site', 'show_coupon', false),
+        'support_phone' => g_config('site', 'support_phone', '400-000-0000'),
+    ];
+}
+```
+
+第三步，Controller 返回：
+
+```php
+<?php
+
+public function actionSite(): array
+{
+    return $this->success(getSiteConfig());
+}
+```
+
+第四步，前端使用：
+
+```js
+if (config.show_coupon) {
+  showCouponButton();
+}
+```
+
+最终你要看懂：一个后端配置值，会影响前端页面是否展示某个入口。
+
+---
+
+### 1.15 今日易错点
+
+| 易错点 | 正确理解 |
+|---|---|
+| 以为 Controller 什么都做 | Controller 主要接请求、调 Service、返响应 |
+| 以为 Service 是数据库层 | Service 是业务组织层，不等于 Model |
+| 只抄字段，不理解影响 | 要记录字段会影响哪个页面或按钮 |
+| 把 `g_config()` 当普通变量 | 它背后可能读取配置中心、DB 或缓存 |
+| 忽略默认值 | 默认值决定配置缺失时系统怎么表现 |
+
+---
+
+### 1.16 今日掌握检查
+
+请你不看答案，回答下面 5 个问题：
+
+1. 配置 API 为什么不能直接写死在前端？
+2. `ConfigController` 在链路中负责什么？
+3. `ConfigService` 在链路中负责什么？
+4. `g_config()` 返回的配置如何影响前端？
+5. `success($data)` 大概做了什么？
+
+参考答案：
+
+1. 因为站点名称、banner、开关等经常变化，写死前端会导致每次都要发版。
+2. 接收配置请求，调用 Service，并返回统一响应。
+3. 组织配置字段，读取业务配置，决定返回给前端的数据结构。
+4. 前端根据配置字段决定显示什么、隐藏什么、使用哪个文案或渠道。
+5. 把业务数据包装成统一 JSON 格式，例如 `code/message/data`。
+
 ## 2. 源码阅读
 
 - `site-api/controllers/ConfigController.php`

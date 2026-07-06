@@ -298,6 +298,288 @@ Controller → Service → Repository → Model
 
 ---
 
+### 1.9 小白实操：把 CSR 当成“请求旅行路线”
+
+今天的核心是把前 4 周知识串起来。
+
+你可以把一次接口请求想成一次旅行：
+
+```text
+前端发请求
+  ↓
+Controller：入口检票员，确认请求进来
+  ↓
+Service：导游，安排这次业务要做哪些事
+  ↓
+Repository：资料员，负责去查数据
+  ↓
+Model/DB：真正的数据来源
+  ↓
+Service：整理数据
+  ↓
+Controller：把结果返回给前端
+```
+
+CSR 不是一个前端概念，这里指：
+
+```text
+Controller → Service → Repository → Model
+```
+
+---
+
+### 1.10 第一步：先认清每层职责
+
+你读企业 PHP 项目时，不要只看文件夹名字，要问：这一层负责什么？
+
+| 层级 | 一句话理解 | 常见代码特征 |
+|---|---|---|
+| Controller | 接 HTTP 请求，返回响应 | `actionXxx()`、`success()`、参数获取 |
+| Service | 组织业务流程 | 调多个 Repository、调用配置、组合返回数据 |
+| Repository | 封装查询 | `findById()`、`getList()`、查询条件 |
+| Model | 表/数据对象 | 字段、表名、ORM 查询 |
+
+一个常见错误是把所有逻辑都放 Controller。你要建立正确习惯：
+
+```text
+Controller 要薄，Service 才是业务主线。
+```
+
+---
+
+### 1.11 第二步：用一条订单详情接口练习
+
+假设有一个接口：
+
+```text
+GET /order/detail?order_id=1001
+```
+
+#### Controller 层
+
+```php
+<?php
+
+public function actionDetail(): array
+{
+    $orderId = (int)$this->request->get('order_id');
+
+    $detail = $this->orderService->getDetail($orderId);
+
+    return $this->success($detail);
+}
+```
+
+你要读出：
+
+| 代码 | 含义 |
+|---|---|
+| `$this->request->get('order_id')` | 从请求里拿订单 ID |
+| `(int)` | 转成整数 |
+| `$this->orderService->getDetail($orderId)` | 调 Service 查订单详情 |
+| `success($detail)` | 返回统一响应 |
+
+#### Service 层
+
+```php
+<?php
+
+public function getDetail(int $orderId): array
+{
+    $order = $this->orderRepository->findById($orderId);
+    $items = $this->orderItemRepository->findByOrderId($orderId);
+
+    return [
+        'order' => $order,
+        'items' => $items,
+    ];
+}
+```
+
+Service 负责把订单主表和订单商品组合起来。
+
+#### Repository 层
+
+```php
+<?php
+
+public function findById(int $orderId): ?Order
+{
+    return Order::findOne(['id' => $orderId]);
+}
+```
+
+Repository 负责具体怎么查数据。
+
+---
+
+### 1.12 第三步：把配置读取放进 CSR
+
+配置读取通常不会单独存在，它会出现在链路中。
+
+例如商品列表接口可能需要决定是否展示优惠券：
+
+```php
+<?php
+
+public function getHomeData(): array
+{
+    $goods = $this->goodsRepository->getHotGoods();
+    $showCoupon = g_config('site', 'show_coupon', false);
+
+    return [
+        'goods' => $goods,
+        'show_coupon' => $showCoupon,
+    ];
+}
+```
+
+这时链路不是单线，而是 Service 同时拿数据和拿配置：
+
+```text
+Controller
+  ↓
+Service
+  ├─ Repository → Model/DB
+  └─ g_config() → 配置中心/缓存
+  ↓
+返回组合数据
+```
+
+小白重点：Service 经常是“业务拼装中心”。
+
+---
+
+### 1.13 第四步：读链路时按固定问题走
+
+每次读一个接口，都用下面 8 个问题：
+
+1. 这个接口 URL 或入口方法是什么？
+2. Controller 方法叫什么？
+3. Controller 接收了哪些参数？
+4. Controller 调用了哪个 Service？
+5. Service 做了哪几步业务？
+6. Service 调用了哪些 Repository/Model？
+7. 有没有读取配置、缓存或第三方服务？
+8. 最终返回给前端哪些字段？
+
+把答案填进表格：
+
+| 问题 | 我的记录 |
+|---|---|
+| 接口入口 |  |
+| Controller |  |
+| 请求参数 |  |
+| Service |  |
+| Repository/Model |  |
+| 配置读取 |  |
+| 返回字段 |  |
+| 不懂的地方 |  |
+
+只要你坚持按这个模板读，项目阅读会稳定很多。
+
+---
+
+### 1.14 第五步：用 Node.js 类比理解
+
+Node/Express 中可能这样写：
+
+```js
+router.get('/order/detail', async (req, res) => {
+  const orderId = Number(req.query.order_id);
+  const detail = await orderService.getDetail(orderId);
+  res.json({ code: 0, data: detail });
+});
+```
+
+Service：
+
+```js
+async function getDetail(orderId) {
+  const order = await orderRepository.findById(orderId);
+  const items = await orderItemRepository.findByOrderId(orderId);
+  return { order, items };
+}
+```
+
+对应 PHP：
+
+| PHP | Node.js |
+|---|---|
+| Controller action | Express route handler |
+| Service class | service module/class |
+| Repository | DAO / repository |
+| Model | ORM model / Prisma model |
+| Composer | npm package + autoload 概念 |
+| namespace | import/export 的组织思路 |
+
+类比的目的不是说它们完全相同，而是让你迁移已有后端分层思维。
+
+---
+
+### 1.15 第六步：阶段总结应该怎么写
+
+不要写成流水账：
+
+```text
+我学了 PHP，学了 Yii2，学了配置。
+```
+
+要写成能力总结：
+
+```markdown
+## 我已经掌握
+- 能读懂 Controller 的 action 方法。
+- 能顺着 Controller 找到 Service。
+- 能理解 Repository/Model 是数据层。
+- 能解释 g_config(module, key, default)。
+
+## 我还不熟
+- namespace 和 PSR-4 还需要多练。
+- Service 里复杂业务分支容易迷路。
+- Repository 查询条件还需要结合数据库理解。
+
+## 我能读通的一条链路
+- 入口：xxx
+- Controller：xxx
+- Service：xxx
+- Repository/Model：xxx
+- 配置读取：xxx
+- 返回字段：xxx
+```
+
+---
+
+### 1.16 今日易错点
+
+| 易错点 | 正确理解 |
+|---|---|
+| 把 CSR 理解成前端渲染 | 这里是 Controller → Service → Repository → Model |
+| 只看 Controller，不追 Service | Service 才是业务理解重点 |
+| Repository 和 Model 分不清 | Repository 封装查询，Model 表示数据结构/ORM |
+| 忽略配置读取 | 配置可能影响返回字段和业务行为 |
+| 阶段总结只写感受 | 要写“证据”：读通了哪条链路 |
+
+---
+
+### 1.17 今日掌握检查
+
+请回答：
+
+1. 后端 CSR 分别代表什么？
+2. Controller 不应该写太多什么逻辑？
+3. Service 为什么是业务理解重点？
+4. Repository 和 Model 的区别是什么？
+5. `g_config()` 可能出现在 CSR 的哪一层？
+
+参考答案：
+
+1. Controller、Service、Repository、Model。
+2. 不应该写大量业务计算、复杂 SQL、库存/金额等核心业务逻辑。
+3. 因为 Service 负责组织业务流程、调用数据层、组合返回数据。
+4. Repository 封装查询方法，Model 表示数据表/ORM 对象。
+5. 常见在 Service，也可能在 Controller，但复杂业务里更推荐放 Service。
+
 ## 2. 源码阅读
 
 本日无指定源码阅读，重点完成练习与复盘。

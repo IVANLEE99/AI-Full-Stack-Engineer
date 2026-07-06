@@ -267,6 +267,286 @@ $showCoupon = g_config('site', 'show_coupon', false);
 
 ---
 
+### 1.9 小白实操：先把 `config()` 和 `g_config()` 分成两类
+
+今天最重要的不是记函数名，而是建立分类能力。
+
+你可以先这样理解：
+
+```text
+Laravel config()：读“应用怎么运行”的配置。
+g_config()：读“业务怎么表现”的配置。
+```
+
+举例：
+
+```php
+<?php
+
+$appName = config('app.name');
+$showCoupon = g_config('site', 'show_coupon', false);
+```
+
+翻译成中文：
+
+```text
+config('app.name')：这个应用叫什么名字。
+g_config('site', 'show_coupon', false)：站点是否展示优惠券入口。
+```
+
+一个偏系统运行，一个偏业务开关。
+
+---
+
+### 1.10 第一步：读懂 Laravel `config('app.name')`
+
+Laravel 的配置文件通常放在 `config/` 目录。
+
+例如：
+
+```php
+<?php
+
+// config/app.php
+return [
+    'name' => env('APP_NAME', 'Laravel'),
+    'timezone' => 'UTC',
+];
+```
+
+当你写：
+
+```php
+<?php
+
+$name = config('app.name');
+```
+
+Laravel 会理解为：
+
+```text
+去 config/app.php 里找 name。
+```
+
+点号 `app.name` 可以拆成：
+
+| 部分 | 含义 |
+|---|---|
+| `app` | 配置文件名 `config/app.php` |
+| `name` | 这个文件返回数组里的 `name` 键 |
+
+所以点号不是神秘语法，本质上是在读多层数组。
+
+---
+
+### 1.11 第二步：读懂 `config()` 的默认值
+
+Laravel 可以这样写：
+
+```php
+<?php
+
+$timezone = config('app.timezone', 'UTC');
+```
+
+意思是：
+
+```text
+如果 app.timezone 存在，就返回配置值。
+如果不存在，就返回 UTC。
+```
+
+这和 JS 里的写法很像：
+
+```js
+const timezone = config.get('app.timezone') ?? 'UTC';
+```
+
+但你要注意参数位置：
+
+```php
+<?php
+
+config('app.timezone', 'UTC');          // 默认值是第二个参数
+g_config('site', 'name', '默认商城');   // 默认值是第三个参数
+```
+
+---
+
+### 1.12 第三步：回到 `g_config()` 的业务含义
+
+`g_config()` 一般不是 Laravel 自带函数，而是项目自己封装的业务配置函数。
+
+例如：
+
+```php
+<?php
+
+$enablePay = g_config('pay', 'enable_stripe', false);
+```
+
+这句话不是在读框架配置，而是在读业务配置：
+
+```text
+pay 模块下 enable_stripe 这个开关是否开启。
+如果没配置，默认 false。
+```
+
+它可能来自：
+
+- 数据库配置表
+- 后台管理系统
+- 配置中心
+- Redis / 文件缓存
+
+这就是它和 Laravel `config()` 的核心差异。
+
+---
+
+### 1.13 第四步：用“修改者”判断该用谁
+
+你可以用一个非常实用的问题判断：
+
+```text
+这个配置以后主要由谁修改？
+```
+
+| 修改者 | 通常用什么 | 示例 |
+|---|---|---|
+| 开发/运维 | `config()` / `.env` | DB、Redis、queue、cache |
+| 运营/后台管理员 | `g_config()` | banner、活动开关、支付渠道开关 |
+| 业务负责人 + 开发共同确认 | `g_config()`，但要标风险 | 风控阈值、退款开关 |
+
+例如：
+
+```text
+数据库 host：运维部署时确定 → config()/env
+首页 banner：运营经常改 → g_config()
+支付开关：业务可能要快速关闭 → g_config()，但高风险
+队列连接名：框架运行需要 → config()
+```
+
+---
+
+### 1.14 第五步：点号 key vs module/key
+
+Laravel：
+
+```php
+<?php
+
+config('database.connections.mysql.host');
+```
+
+你可以拆成：
+
+```text
+database 配置文件
+  connections
+    mysql
+      host
+```
+
+项目业务配置：
+
+```php
+<?php
+
+g_config('pay', 'enable_stripe', false);
+```
+
+你可以拆成：
+
+```text
+pay 模块
+  enable_stripe 配置项
+  找不到则 false
+```
+
+对比：
+
+| 写法 | 更关注什么 |
+|---|---|
+| `config('database.connections.mysql.host')` | 应用基础设施配置 |
+| `g_config('pay', 'enable_stripe', false)` | 业务模块下的配置项 |
+
+---
+
+### 1.15 第六步：常见场景判断练习
+
+请先自己判断，再看答案。
+
+| 场景 | 推荐方式 | 原因 |
+|---|---|---|
+| 数据库 host | `config()` / env | 基础设施配置 |
+| Redis 连接地址 | `config()` / env | 基础设施配置 |
+| APP 名称 | `config()` | 应用配置，通常随部署确定 |
+| 首页 banner | `g_config()` | 运营展示配置 |
+| 是否开启优惠券入口 | `g_config()` | 业务开关 |
+| 支付渠道开关 | `g_config()` | 业务开关，但高风险 |
+| 队列连接名 | `config()` | 框架运行配置 |
+| 最大下单金额 | `g_config()` 或规则系统 | 业务阈值，高风险需谨慎 |
+
+小白重点：不是看到“配置”两个字就都用同一个函数。
+
+---
+
+### 1.16 第七步：把 Node.js 类比说清楚
+
+如果你熟悉 Node，可以这样对应：
+
+```js
+const dbHost = process.env.DB_HOST;
+const appName = config.get('app.name');
+const showCoupon = await flags.get('site.show_coupon', false);
+```
+
+对应 PHP：
+
+```php
+<?php
+
+$dbHost = config('database.connections.mysql.host');
+$appName = config('app.name');
+$showCoupon = g_config('site', 'show_coupon', false);
+```
+
+注意：类比只是帮助理解，不代表底层完全一样。
+
+`g_config()` 可能支持后台动态修改，而 `config()` 通常在应用启动或部署时确定。
+
+---
+
+### 1.17 今日易错点
+
+| 易错点 | 正确理解 |
+|---|---|
+| 以为 `config()` 和 `g_config()` 只是参数不同 | 它们的配置来源和使用场景也不同 |
+| 把业务开关放进框架配置 | 业务开关更适合业务配置系统 |
+| 把 DB 密码放进普通业务配置 | 敏感基础设施配置不应随便动态化 |
+| 忘记默认值位置 | `config()` 第二参，`g_config()` 第三参 |
+| 认为 Laravel `config()` 一定不能改 | 可以改配置文件，但通常不是运营运行时动态改 |
+
+---
+
+### 1.18 今日掌握检查
+
+请回答：
+
+1. Laravel `config('app.name')` 通常读取哪里？
+2. `config()` 默认值是第几个参数？
+3. `g_config()` 默认值是第几个参数？
+4. 框架配置和业务配置最大的区别是什么？
+5. 首页 banner 应该更像 `config()` 还是 `g_config()`？为什么？
+
+参考答案：
+
+1. 通常读取 `config/app.php` 中的 `name` 配置。
+2. 第二个参数。
+3. 第三个参数。
+4. 框架配置支撑应用运行，业务配置控制业务展示、开关和阈值。
+5. 更像 `g_config()`，因为 banner 属于运营展示配置，可能需要动态调整。
+
 ## 2. 源码阅读
 
 本日无指定源码阅读，重点完成练习与复盘。
