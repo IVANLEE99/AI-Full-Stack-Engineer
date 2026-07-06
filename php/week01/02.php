@@ -197,3 +197,57 @@ function makeAnimalSpeak(AnimalPoly $animal): void
 
 makeAnimalSpeak(new DogPoly());
 makeAnimalSpeak(new CatPoly());
+
+echo "\n";
+
+// 1.12 interface 是什么？
+// interface 是一种抽象类型，它定义了一组方法的签名，但不提供实现。
+// 实现 interface 的类必须提供这些方法的具体实现。
+// interface 用于定义对象的行为，而不是对象的状态。
+
+interface PaymentInterface
+{
+    public function process(float $amount): bool;
+}
+
+class StripePayment implements PaymentInterface
+{
+    public function process(float $amount): bool
+    {
+        echo "Processing Stripe payment of $amount\n";
+        // Stripe 支付逻辑
+        return true;
+    }
+}
+
+class PaypalPayment implements PaymentInterface
+{
+    public function process(float $amount): bool
+    {
+        echo "Processing Paypal payment of $amount\n";
+        // Paypal 支付逻辑
+        return true;
+    }
+}
+
+// 使用 interface 实现多态
+function processPayment(PaymentInterface $payment, float $amount): void
+{
+    if ($payment->process($amount)) {
+        echo "Payment processed successfully\n";
+    } else {
+        echo "Payment failed\n";
+    }
+}
+
+// 可以传入任何实现 PaymentInterface 的对象
+processPayment(new StripePayment(), 100.0);
+processPayment(new PaypalPayment(), 50.0);
+
+echo "\n";
+
+// 1.14 abstract class 是什么？
+// abstract class 是一种不能被实例化的类，它通常用于定义子类的模板。
+// abstract class 可以包含抽象方法和具体方法。
+// 抽象方法是没有实现的方法，子类必须实现这些方法。
+// 具体方法是有实现的方法，子类可以继承这些方法。
