@@ -836,9 +836,13 @@ Node 会缓存模块，所以多次 `require` 拿到的是同一个对象。
 
 ```text
 namespace 是什么？
+    namespace common;
 class 名是什么？
+    class BaseService
 是否有 extends？
+    无
 是否有 trait？
+    无
 ```
 
 如果你看到类似：
@@ -871,8 +875,11 @@ public static function instance()
 你要观察：
 
 1. 它是不是 `static` 方法？
+    public static function instance()
 2. 它是不是返回当前类实例？
+    return $container->get(static::class);
 3. 它内部有没有缓存对象？
+    有
 4. 它是不是为了少写 `new XxxService()`？
 
 记录表：
@@ -893,7 +900,7 @@ public static function instance()
 
 | 方法名 | 大概作用 | 是否有返回值类型 |
 |---|---|---|
-|  |  |  |
+| public function setCommonParams($data) |  |  |
 |  |  |  |
 
 如果暂时看不懂方法细节，可以先只记录名字和猜测。
