@@ -49,13 +49,13 @@
 
 | 天 | 类型 | 主题 |
 |----|------|------|
-| Day 1（周一） | 概念入门 | OrderController 结构与 action |
-| Day 2（周二） | 源码阅读 | OrderService 业务编排 |
-| Day 3（周三） | 编码练习 | OrderConfirmForm 参数校验 |
-| Day 4（周四） | 架构理解 | 分布式锁与防重复提交 |
-| Day 5（周五） | 类比日 | 订单状态机与类比日 |
-| Day 6（周六） | 项目实战 | 下单全链路时序图 |
-| Day 7（周日） | 复盘预习 | 验收与预习 |
+| [Day 1（周一）](./day01.md) | 概念入门 | OrderController 结构与 action |
+| [Day 2（周二）](./day02.md) | 源码阅读 | OrderService 业务编排 |
+| [Day 3（周三）](./day03.md) | 编码练习 | OrderConfirmForm 参数校验 |
+| [Day 4（周四）](./day04.md) | 架构理解 | 分布式锁与防重复提交 |
+| [Day 5（周五）](./day05.md) | 类比日 | 订单状态机与类比日 |
+| [Day 6（周六）](./day06.md) | 项目实战 | 下单全链路时序图 |
+| [Day 7（周日）](./day07.md) | 复盘预习 | 验收与预习 |
 
 ### Day 1（周一）：OrderController 结构与 action
 

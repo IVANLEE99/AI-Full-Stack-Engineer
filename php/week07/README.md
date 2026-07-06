@@ -49,13 +49,13 @@
 
 | 天 | 类型 | 主题 |
 |----|------|------|
-| Day 1（周一） | 概念入门 | PayController 分类 |
-| Day 2（周二） | 源码阅读 | PayService 与 processPayment Node 链 |
-| Day 3（周三） | 编码练习 | PaymentFactory 渠道工厂 |
-| Day 4（周四） | 架构理解 | 支付渠道 SDK 封装 |
-| Day 5（周五） | 类比日 | ProcessPaymentNode 与类比日 |
-| Day 6（周六） | 项目实战 | 支付状态机与渠道笔记 |
-| Day 7（周日） | 复盘预习 | 验收与预习 |
+| [Day 1（周一）](./day01.md) | 概念入门 | PayController 分类 |
+| [Day 2（周二）](./day02.md) | 源码阅读 | PayService 与 processPayment Node 链 |
+| [Day 3（周三）](./day03.md) | 编码练习 | PaymentFactory 渠道工厂 |
+| [Day 4（周四）](./day04.md) | 架构理解 | 支付渠道 SDK 封装 |
+| [Day 5（周五）](./day05.md) | 类比日 | ProcessPaymentNode 与类比日 |
+| [Day 6（周六）](./day06.md) | 项目实战 | 支付状态机与渠道笔记 |
+| [Day 7（周日）](./day07.md) | 复盘预习 | 验收与预习 |
 
 ### Day 1（周一）：PayController 分类
 

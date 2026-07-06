@@ -46,13 +46,13 @@
 
 | 天 | 类型 | 主题 |
 |----|------|------|
-| Day 1（周一） | 概念入门 | UserController 与 quickLogin |
-| Day 2（周二） | 源码阅读 | UserService 与 Redis 缓存 |
-| Day 3（周三） | 编码练习 | 注册 Node 链 |
-| Day 4（周四） | 架构理解 | OAuth 第三方登录 |
-| Day 5（周五） | 类比日 | JWT 与类比日 |
-| Day 6（周六） | 项目实战 | 用户域总结项目 |
-| Day 7（周日） | 复盘预习 | 验收与预习 |
+| [Day 1（周一）](./day01.md) | 概念入门 | UserController 与 quickLogin |
+| [Day 2（周二）](./day02.md) | 源码阅读 | UserService 与 Redis 缓存 |
+| [Day 3（周三）](./day03.md) | 编码练习 | 注册 Node 链 |
+| [Day 4（周四）](./day04.md) | 架构理解 | OAuth 第三方登录 |
+| [Day 5（周五）](./day05.md) | 类比日 | JWT 与类比日 |
+| [Day 6（周六）](./day06.md) | 项目实战 | 用户域总结项目 |
+| [Day 7（周日）](./day07.md) | 复盘预习 | 验收与预习 |
 
 ### Day 1（周一）：UserController 与 quickLogin
 

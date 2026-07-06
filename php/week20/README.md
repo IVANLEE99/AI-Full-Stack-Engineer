@@ -44,13 +44,13 @@
 
 | 天 | 类型 | 主题 |
 |----|------|------|
-| Day 1（周一） | 概念入门 | 三 Agent 架构 |
-| Day 2（周二） | 源码阅读 | 需求 Agent |
-| Day 3（周三） | 编码练习 | 架构 Agent |
-| Day 4（周四） | 架构理解 | Review Agent 串联 |
-| Day 5（周五） | 类比日 | 阶段⑤总结 |
-| Day 6（周六） | 项目实战 | Multi-Agent Demo |
-| Day 7（周日） | 复盘预习 | 验收与预习 |
+| [Day 1（周一）](./day01.md) | 概念入门 | 三 Agent 架构 |
+| [Day 2（周二）](./day02.md) | 源码阅读 | 需求 Agent |
+| [Day 3（周三）](./day03.md) | 编码练习 | 架构 Agent |
+| [Day 4（周四）](./day04.md) | 架构理解 | Review Agent 串联 |
+| [Day 5（周五）](./day05.md) | 类比日 | 阶段⑤总结 |
+| [Day 6（周六）](./day06.md) | 项目实战 | Multi-Agent Demo |
+| [Day 7（周日）](./day07.md) | 复盘预习 | 验收与预习 |
 
 ### Day 1（周一）：三 Agent 架构
 

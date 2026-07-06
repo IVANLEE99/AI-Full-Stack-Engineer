@@ -48,13 +48,13 @@
 
 | 天 | 类型 | 主题 |
 |----|------|------|
-| Day 1（周一） | 概念入门 | RabbitMQ 基础 |
-| Day 2（周二） | 源码阅读 | Stripe Webhook 与验签 |
-| Day 3（周三） | 编码练习 | 退款幂等设计 |
-| Day 4（周四） | 架构理解 | Docker 开发环境 |
-| Day 5（周五） | 类比日 | Laravel Queue 对比与阶段总结 |
-| Day 6（周六） | 项目实战 | 结账全链路时序图（含 MQ） |
-| Day 7（周日） | 复盘预习 | 验收与预习 |
+| [Day 1（周一）](./day01.md) | 概念入门 | RabbitMQ 基础 |
+| [Day 2（周二）](./day02.md) | 源码阅读 | Stripe Webhook 与验签 |
+| [Day 3（周三）](./day03.md) | 编码练习 | 退款幂等设计 |
+| [Day 4（周四）](./day04.md) | 架构理解 | Docker 开发环境 |
+| [Day 5（周五）](./day05.md) | 类比日 | Laravel Queue 对比与阶段总结 |
+| [Day 6（周六）](./day06.md) | 项目实战 | 结账全链路时序图（含 MQ） |
+| [Day 7（周日）](./day07.md) | 复盘预习 | 验收与预习 |
 
 ### Day 1（周一）：RabbitMQ 基础
 

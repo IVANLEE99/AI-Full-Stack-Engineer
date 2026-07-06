@@ -50,13 +50,13 @@
 
 | 天 | 类型 | 主题 |
 |----|------|------|
-| Day 1（周一） | 概念入门 | PHP 8 类型系统与工程入口 |
-| Day 2（周二） | 源码阅读 | OOP 与 ES6 Class 对比 |
-| Day 3（周三） | 编码练习 | namespace 与 Composer 依赖 |
-| Day 4（周四） | 架构理解 | Trait、Exception 与企业基类 |
-| Day 5（周五） | 类比日 | PSR-12 与类比日 |
-| Day 6（周六） | 项目实战 | Todo REST API 实战 |
-| Day 7（周日） | 复盘预习 | 验收与预习 |
+| [Day 1（周一）](./day01.md) | 概念入门 | PHP 8 类型系统与工程入口 |
+| [Day 2（周二）](./day02.md) | 源码阅读 | OOP 与 ES6 Class 对比 |
+| [Day 3（周三）](./day03.md) | 编码练习 | namespace 与 Composer 依赖 |
+| [Day 4（周四）](./day04.md) | 架构理解 | Trait、Exception 与企业基类 |
+| [Day 5（周五）](./day05.md) | 类比日 | PSR-12 与类比日 |
+| [Day 6（周六）](./day06.md) | 项目实战 | Todo REST API 实战 |
+| [Day 7（周日）](./day07.md) | 复盘预习 | 验收与预习 |
 
 ### Day 1（周一）：PHP 8 类型系统与工程入口
 
