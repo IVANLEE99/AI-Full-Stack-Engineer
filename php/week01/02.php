@@ -276,3 +276,37 @@ class UserController extends BaseController
 $controller = new UserController();
 
 echo $controller->json($controller->handle());
+
+echo "\n";
+
+// 1.16 单例模式是什么？
+// 单例模式是一种设计模式，它确保一个类只有一个实例，并提供一个全局访问点来获取这个实例。
+// 常见应用场景：数据库连接、日志记录、配置管理等。
+
+class ConfigService
+{
+    private static ?ConfigService $instance = null;
+
+    private function __construct()
+    {
+    }
+
+    public static function instance(): ConfigService
+    {
+        if (self::$instance === null) {
+            self::$instance = new ConfigService();
+        }
+
+        return self::$instance;
+    }
+
+    public function get(string $key): string
+    {
+        return "value of " . $key;
+    }
+}
+
+$config = ConfigService::instance();
+
+echo $config->get("app.name");
+echo "\n";

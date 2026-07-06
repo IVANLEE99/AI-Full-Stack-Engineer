@@ -1,7 +1,7 @@
 # PHP 与 Composer 安装说明（macOS）
 
 > 适用对象：PHP 初学者，macOS 用户。  
-> 当前状态示例：PHP 已安装，但 Composer 未安装。
+> 当前状态示例：PHP 未安装，Composer 未安装，Homebrew 也未安装。
 
 ---
 
@@ -21,7 +21,29 @@ PHP 8.4.14 (cli) ...
 
 说明 PHP 已经安装成功。
 
+如果看到：
+
+```text
+zsh: command not found: php
+```
+
+说明 PHP 还没有安装，或者安装了但没有加入 PATH。
+
 再执行：
+
+```bash
+brew -v
+```
+
+如果看到：
+
+```text
+zsh: command not found: brew
+```
+
+说明 Homebrew 还没有安装，需要先安装 Homebrew，再用 Homebrew 安装 PHP 和 Composer。
+
+最后执行：
 
 ```bash
 composer -V
@@ -50,16 +72,25 @@ zsh: command not found: composer
 | `composer install` | `npm install` | 安装项目依赖 |
 | `vendor/autoload.php` | Node 模块解析机制 | Composer 自动加载入口 |
 
-你现在的情况是：
+你现在的情况可能是：
 
 ```text
-PHP runtime 已经有了
+PHP runtime 还缺
 Composer 包管理器还缺
+Homebrew 也还缺
+```
+
+所以推荐顺序是：
+
+```text
+先安装 Homebrew
+再安装 PHP
+最后安装 Composer
 ```
 
 ---
 
-## 3. 推荐安装方式：使用 Homebrew 安装 Composer
+## 3. 推荐安装方式：使用 Homebrew 安装 PHP 和 Composer
 
 ### 3.1 检查是否已经安装 Homebrew
 
@@ -121,7 +152,34 @@ brew -v
 
 ---
 
-### 3.3 使用 Homebrew 安装 Composer
+### 3.3 使用 Homebrew 安装 PHP
+
+执行：
+
+```bash
+brew install php
+```
+
+安装完成后检查：
+
+```bash
+php -v
+which php
+```
+
+如果看到类似：
+
+```text
+PHP 8.x.x (cli) ...
+```
+
+说明 PHP 安装成功。
+
+如果 `php -v` 仍然提示 `command not found`，重新打开终端后再试一次。
+
+---
+
+### 3.4 使用 Homebrew 安装 Composer
 
 执行：
 
@@ -147,7 +205,9 @@ Composer version 2.x.x ...
 
 ## 4. 备用安装方式：使用 Composer 官方安装脚本
 
-如果你不想用 Homebrew，也可以使用 Composer 官方安装脚本。
+如果你已经安装了 PHP，但不想用 Homebrew 安装 Composer，也可以使用 Composer 官方安装脚本。
+
+注意：这种方式要求 `php -v` 已经可以正常运行；如果 `php: command not found`，请先回到第 3 节安装 PHP。
 
 ### 4.1 下载安装器
 
@@ -357,7 +417,31 @@ Tom
 
 ## 8. 常见问题
 
-### 8.1 `composer: command not found`
+### 8.1 `php: command not found`
+
+说明 PHP 没安装，或者不在 PATH。
+
+如果你还没有 Homebrew，先安装 Homebrew：
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+安装完成后按终端提示配置 PATH，然后执行：
+
+```bash
+brew install php
+```
+
+重新打开终端后检查：
+
+```bash
+php -v
+```
+
+---
+
+### 8.2 `composer: command not found`
 
 说明 Composer 没安装，或者不在 PATH。
 
@@ -375,7 +459,7 @@ composer -V
 
 ---
 
-### 8.2 `brew: command not found`
+### 8.3 `brew: command not found`
 
 说明 Homebrew 没安装。
 
@@ -389,7 +473,7 @@ composer -V
 
 ---
 
-### 8.3 `Permission denied`
+### 8.4 `Permission denied`
 
 如果用官方安装脚本安装到 `/usr/local/bin` 时提示权限不足，可以使用：
 
@@ -401,7 +485,7 @@ sudo php composer-setup.php --install-dir=/usr/local/bin --filename=composer
 
 ---
 
-### 8.4 修改了 `composer.json` 的 autoload 后不生效
+### 8.5 修改了 `composer.json` 的 autoload 后不生效
 
 修改 `autoload.psr-4` 后，需要执行：
 
@@ -430,4 +514,4 @@ composer dump-autoload
 
 ## 10. 一句话总结
 
-> PHP 是运行 PHP 代码的解释器，Composer 是 PHP 的包管理器和自动加载工具；安装好 Composer 后，才能真正开始学习 `composer.json`、`vendor/autoload.php` 和 PSR-4 自动加载。
+> PHP 是运行 PHP 代码的解释器，Composer 是 PHP 的包管理器和自动加载工具；如果终端提示 `php: command not found`，要先安装 Homebrew 和 PHP，再安装 Composer。
