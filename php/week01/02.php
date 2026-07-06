@@ -251,3 +251,28 @@ echo "\n";
 // abstract class 可以包含抽象方法和具体方法。
 // 抽象方法是没有实现的方法，子类必须实现这些方法。
 // 具体方法是有实现的方法，子类可以继承这些方法。
+
+abstract class BaseController
+{
+    public function json(array $data): string
+    {
+        return json_encode($data, JSON_UNESCAPED_UNICODE);
+    }
+
+    abstract public function handle(): array;
+}
+
+class UserController extends BaseController
+{
+    public function handle(): array
+    {
+        return [
+            "code" => 0,
+            "data" => ["name" => "Tom"],
+        ];
+    }
+}
+
+$controller = new UserController();
+
+echo $controller->json($controller->handle());
