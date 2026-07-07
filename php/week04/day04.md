@@ -648,7 +648,31 @@ $showCoupon = g_config('site', 'show_coupon', false);
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 Laravel 的 `config('app.name')` 通常读取哪里？
+
+参考答案：读取 `config/app.php` 这个配置文件返回数组里的 `name` 键，点号本质上就是在读多层配置数组。
+
+### 8.2 `config()` 和 `g_config()` 的默认值分别是第几个参数？
+
+参考答案：`config($key, $default)` 默认值是第二个参数；`g_config($module, $key, $default)` 默认值是第三个参数。
+
+### 8.3 框架配置和业务配置最大的区别是什么？
+
+参考答案：框架配置支撑应用运行（如 app name、DB、queue），修改频率低、由开发运维改；业务配置控制业务展示、开关和阈值（如 banner、支付开关），修改频率高、可能由运营改。
+
+### 8.4 `g_config()` 和 Laravel 自带的 `config()` 来源有什么不同？
+
+参考答案：`config()` 通常来自 `config/*.php` 文件和 `.env`，在启动或部署时确定；`g_config()` 一般是项目封装的业务配置函数，可能来自数据库、配置中心、后台管理系统或缓存，支持动态修改。
+
+### 8.5 首页 banner 应该更像 `config()` 还是 `g_config()`？为什么？
+
+参考答案：更像 `g_config()`，因为 banner 属于运营展示配置，经常需要动态调整，改错通常只影响展示，适合走业务配置系统。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -660,7 +684,7 @@ $showCoupon = g_config('site', 'show_coupon', false);
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 04 Day 04：Laravel 对比 的学习。

@@ -267,7 +267,49 @@ Model/ThinkORM 负责单表或关联查询。
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 Week 11 的整体主题是什么？
+
+参考答案：
+
+> ✅ ThinkPHP 8 门店 API + 框架迁移思维。核心是把 Yii2 阶段积累的业务域阅读方法迁移到 TP8，并能和 Node/NestJS 做类比。
+
+---
+
+### 8.2 请口述一条完整的 TP8 请求主链路。
+
+参考答案：
+
+> ✅ HTTP 请求进入项目 → 路由把 URL 映射到 Controller action → Middleware 做鉴权/权限/公参/日志 → Controller 取参并选择 Validate scene 校验 → Service 编排业务 → Model/ModelJoin 查询数据 → Controller 用统一格式返回 code/data/msg。
+
+---
+
+### 8.3 框架迁移能力的核心是什么？
+
+参考答案：
+
+> ✅ 抽象能力。能把 Yii2、TP8、Node/NestJS 都看成“路由 → Controller → 校验 → Service → 数据层 → 响应”的不同实现，就能快速读懂新项目，而不是死记某个框架的 API。
+
+---
+
+### 8.4 读一个陌生 PHP 框架项目时，应该先问哪几个问题？
+
+参考答案：
+
+> ✅ 入口在哪里、路由在哪里、Controller 放哪里、参数校验在哪里、业务层在哪里、数据层在哪里、中间件在哪里、统一响应在哪里、内部服务调用怎么封装。
+
+---
+
+### 8.5 下周跨服务调用需要重点关注哪些主题？
+
+参考答案：
+
+> ✅ PayInternal 内部支付接口调用、InternalServiceHelper 内网 HTTP 封装、服务间鉴权、超时重试、错误传递、trace_id 链路追踪。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -279,7 +321,7 @@ Model/ThinkORM 负责单表或关联查询。
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 11 Day 07：验收与预习 的学习。

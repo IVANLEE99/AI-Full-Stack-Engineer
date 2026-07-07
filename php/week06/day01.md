@@ -323,7 +323,49 @@ Service 方法：
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 `OrderController` 的核心职责是什么？
+
+参考答案：
+
+> ✅ 它是订单域的 HTTP 入口，只负责“接请求、校验入口、调用订单服务、统一返回结果”，不应该承载金额计算、库存扣减这类复杂订单规则。
+
+---
+
+### 8.2 `endSuccess` / `endFail` 是干什么用的？
+
+参考答案：
+
+> ✅ 它们是统一响应方法。成功时用 `endSuccess` 返回 `code=0` 加 `data`，失败时用 `endFail` 返回错误码和 `info` 提示，作用类似 Node.js 的 `res.json()`。
+
+---
+
+### 8.3 为什么 action 里要用 `try/catch`？
+
+参考答案：
+
+> ✅ 订单接口容易因参数错误、库存不足、重复提交等失败。`try/catch` 不是为了吞掉错误，而是把后端异常转换成前端能理解的错误响应。
+
+---
+
+### 8.4 哪些逻辑不应该写在 Controller 里？
+
+参考答案：
+
+> ✅ 金额计算、库存扣减、订单状态流转、复杂 SQL、大量 if/else 业务分支都不应放在 Controller，而应下沉到 Service 或 Repository。
+
+---
+
+### 8.5 怎么判断一个 action 是好是坏？
+
+参考答案：
+
+> ✅ 好的 action 是“取参 → Form 校验 → Service 处理业务 → 统一返回”；坏的 action 会在 Controller 里直接查商品、算价格、扣库存、改状态。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -335,7 +377,7 @@ Service 方法：
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 06 Day 01：OrderController 结构与 action 的学习。

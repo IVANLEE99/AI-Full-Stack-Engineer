@@ -334,7 +334,49 @@ php -m 是否有 redis/amqp：
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 为什么学 MQ / Webhook / 微服务要用 Docker？
+
+参考答案：
+
+> ✅ 因为这些学习会同时用到 PHP、Nginx、MySQL、Redis、RabbitMQ、队列消费者等多个组件。用 Docker 可以按同一套配置统一启动，避免版本不一致、扩展缺失、配置不同、启动顺序复杂等“我本地可以、你本地不行”的问题。
+
+---
+
+### 8.2 镜像（Image）和容器（Container）有什么区别？
+
+参考答案：
+
+> ✅ 镜像是程序运行的模板，类似安装包或快照；容器是镜像跑起来的实例，是正在运行的进程环境。一个镜像可以启动多个容器。
+
+---
+
+### 8.3 进入 PHP 容器后，`php -v` 看到的是哪个 PHP？
+
+参考答案：
+
+> ✅ 是容器里镜像指定的 PHP，不一定是你 Mac/Windows 本机安装的 PHP。项目运行时用的就是容器里的 PHP，所以排查版本、扩展、配置时要进入容器看，可以用 `docker compose exec php bash` 进入。
+
+---
+
+### 8.4 容器内访问 MySQL / RabbitMQ，连接地址应该写什么？
+
+参考答案：
+
+> ✅ 通常不是 `127.0.0.1`，而是 docker-compose 里的服务名，例如 `mysql`、`rabbitmq`、`redis`。因为在容器里 `localhost` 指的是容器自己，compose 会为服务名提供内部 DNS 解析。
+
+---
+
+### 8.5 排查“队列消息没被消费”，应该看哪些日志？
+
+参考答案：
+
+> ✅ 至少看 RabbitMQ 日志（连接/队列问题）和消费者日志（消息消费失败），必要时再看 PHP 应用日志。可以用 `docker compose logs -f rabbitmq` 和 `docker compose logs -f php` 查看，日志也可能写在框架的 `runtime/logs` 或 `storage/logs` 目录。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -346,7 +388,7 @@ php -m 是否有 redis/amqp：
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 08 Day 04：Docker 开发环境 的学习。

@@ -294,7 +294,49 @@ PHP Node 链类似：
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 `ProcessPaymentNode` 在支付 Node 链中通常负责什么？
+
+参考答案：
+
+> ✅ 它通常是真正调用渠道 SDK 的节点：根据渠道找到 SDK Service，调用第三方 API，保存交易号或 client secret，识别成功/失败/处理中状态，并把结果写回 Context。
+
+---
+
+### 8.2 Context 在支付 Node 链中的作用是什么？
+
+参考答案：
+
+> ✅ Context 是一次支付流程的共享数据容器。前面的 Node 写入数据（如订单、支付单、渠道、金额），后面的 Node 读取使用。它不是随便塞数据的全局变量，而是这次支付流程的上下文。
+
+---
+
+### 8.3 `ProcessPaymentNode` 可能向 Context 写入哪些字段？
+
+参考答案：
+
+> ✅ 常见有 `third_transaction_id`（第三方交易号）、`client_secret`（前端继续支付参数）、`redirect_url`、`payment_status`（初始状态）、`raw_response`（原始响应）、`error_message`（错误信息）。
+
+---
+
+### 8.4 `ProcessPaymentNode` 失败时应该怎么处理？
+
+参考答案：
+
+> ✅ 记录日志 → 标记支付失败或处理中 → 中断 Node 链 → 返回明确错误。失败可能来自渠道不存在、SDK 抛异常、第三方返回失败、网络超时、金额币种不合法等。
+
+---
+
+### 8.5 Context 字段是不是越多越好？
+
+参考答案：
+
+> ✅ 不是。太少会导致重复查询、传递不清；太多会让每个 Node 都能乱改、来源不明、调试困难。原则是命名清晰、写入者明确、敏感字段谨慎、只放流程必要数据。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -306,7 +348,7 @@ PHP Node 链类似：
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 07 Day 05：ProcessPaymentNode 与类比日 的学习。

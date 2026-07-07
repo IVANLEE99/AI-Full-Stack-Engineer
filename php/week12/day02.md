@@ -428,7 +428,49 @@ HTTP Client
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 `InternalServiceHelper` 在门店服务里扮演什么角色？
+
+参考答案：
+
+> ✅ 它是 TP8 门店服务访问其他内网服务（订单、支付、用户、售后、核心）的统一门面/客户端，负责服务地址、公共请求头、鉴权、trace_id、超时和错误规范，把跨服务调用方式统一收口。
+
+---
+
+### 8.2 Helper 和 Service 的职责边界是什么？
+
+参考答案：
+
+> ✅ 一句话记忆：Service 管业务，Helper 管调用。Service 负责门店业务判断（如权限校验、状态判断），跨服务的 HTTP 调用细节（拼 URL、签名、curl、网络错误处理）交给 `InternalServiceHelper`，两者不要混在一起。
+
+---
+
+### 8.3 为什么门店服务不能每个 Service 自己写 HTTP 请求？
+
+参考答案：
+
+> ✅ 因为门店业务要调用订单、支付、用户、售后等多个服务，如果每个 Service 都自己拼 URL、写签名、处理超时，代码会很快失控，且地址变更、鉴权升级时要到处改。收口到 Helper 后只需改一处。
+
+---
+
+### 8.4 `InternalServiceHelper` 应该封装哪些能力？
+
+参考答案：
+
+> ✅ 服务地址管理、path 拼接、公共请求头（鉴权、trace_id、request_id、service name）、超时设置、统一的错误规范和返回结构解析等。它不应该承载具体门店业务规则。
+
+---
+
+### 8.5 `InternalServiceHelper` 和 `PayInternal` 有什么区别和联系？
+
+参考答案：
+
+> ✅ 两者都是内网调用的客户端封装。`PayInternal` 通常专注于订单域调用支付服务这一条线；`InternalServiceHelper` 是门店服务面向多个内网服务的统一门面，覆盖面更广。共同点是都把地址、鉴权、trace_id、超时、错误收口，不写业务逻辑。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -440,7 +482,7 @@ HTTP Client
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 12 Day 02：InternalServiceHelper 的学习。

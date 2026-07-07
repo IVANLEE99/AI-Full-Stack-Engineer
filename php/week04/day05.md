@@ -690,7 +690,31 @@ Model/表：
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 后端语境里的 CSR 指什么？
+
+参考答案：指 Controller → Service → Repository → Model 这条后端分层链路，不要和前端的 Client Side Rendering 混淆。
+
+### 8.2 Controller 层不应该写太多什么逻辑？
+
+参考答案：不应该写大量业务计算和复杂查询，例如订单金额计算、库存扣减、优惠券核销、大量 SQL。这些应下沉到 Service 或更底层。
+
+### 8.3 为什么说 Service 是理解业务的核心入口？
+
+参考答案：因为 Service 负责组织业务流程，编排多个 Repository/Model，处理业务规则，并组合出最终返回数据，业务主线基本都在这一层。
+
+### 8.4 Repository 和 Model 的区别是什么？
+
+参考答案：Repository 关注“怎么查数据”，封装查询方法（如 `findById()`）；Model 关注“数据结构或 ORM 映射”，表示数据表或领域对象。
+
+### 8.5 `g_config()` 通常出现在 CSR 的哪一层？
+
+参考答案：最常见在 Service 层，用来读取配置并组合进返回数据；也可能出现在 Controller，但复杂业务里更推荐放 Service。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -702,7 +726,7 @@ Model/表：
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 04 Day 05：阶段总结与类比日 的学习。

@@ -212,7 +212,49 @@ Route → Controller → Validate → Service → Model → Response
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 门店列表接口的完整链路是怎样的？
+
+参考答案：
+
+> ✅ Route → StoreController::index() → StoreService::list($params) → OfflineStore Model/ModelJoin → 返回分页列表。先从 Controller 找入口，再追到 Service 和 Model。
+
+---
+
+### 8.2 `StoreController::index()` 通常负责哪些事？
+
+参考答案：
+
+> ✅ 获取请求参数（page、limit、keyword、status）、调用 Validate 校验、调用 Service（`$service->list($params)`）、返回响应。不建议在 Controller 里写复杂查询或联表。
+
+---
+
+### 8.3 `StoreService::list()` 应该做什么？
+
+参考答案：
+
+> ✅ 组织查询条件、处理业务筛选规则、调用 Model/ModelJoin、处理分页结构、格式化返回字段。Service 是业务编排层，不关心 HTTP 细节。
+
+---
+
+### 8.4 列表接口常见参数有哪些？分别怎么校验？
+
+参考答案：
+
+> ✅ page（integer，>=1）、limit（integer，限制最大值）、keyword（string，长度限制）、status（枚举值）、city_id（integer）。校验主要防止非法或超范围的输入。
+
+---
+
+### 8.5 `StoreService` 可以类比 Node 里的什么？
+
+参考答案：
+
+> ✅ 类比 NestJS 的 Service（业务层）。Controller 的 index 类似 list route handler，Validate 类似 DTO/Zod schema，Model 类似 ORM model / repository。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -224,7 +266,7 @@ Route → Controller → Validate → Service → Model → Response
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 11 Day 02：StoreController 到 StoreService 的学习。

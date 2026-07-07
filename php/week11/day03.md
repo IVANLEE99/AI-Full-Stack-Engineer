@@ -239,7 +239,49 @@ TP8 scene 类似在同一个验证器里挑选字段。
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 为什么门店 API 需要 Validate？
+
+参考答案：
+
+> ✅ 因为不能直接相信前端传参。name 可能为空或过长，phone 可能格式错误，status 可能是不存在的值，经纬度可能非法。Validate 把这些基础参数校验集中起来。
+
+---
+
+### 8.2 TP8 的 scene 是用来解决什么问题的？
+
+参考答案：
+
+> ✅ 解决“同一个资源在新增、编辑、删除、查询等不同接口中需要校验不同字段”的问题。scene 就是为不同接口选择不同的字段组合。
+
+---
+
+### 8.3 新增门店和编辑门店的 scene 有什么区别？
+
+参考答案：
+
+> ✅ 新增（add）通常校验 name、phone、address、status；编辑（edit）在此基础上还要多校验 id，用来定位要修改的记录。
+
+---
+
+### 8.4 Yii2 Form 和 TP8 Validate 如何对照？
+
+参考答案：
+
+> ✅ Yii2 Form Model 对应 TP8 Validate 类；`rules()` 对应 `$rule`；`scenarios()` 对应 `$scene`；`getFirstError()` 对应 `getError()`。
+
+---
+
+### 8.5 TP8 的 scene 可以类比 Zod 里的什么？
+
+参考答案：
+
+> ✅ 类似 Zod 的 `pick()` / `partial()` / `extend()`。在同一个 schema/验证器里挑选或组合不同字段，对应不同接口的校验需求。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -251,7 +293,7 @@ TP8 scene 类似在同一个验证器里挑选字段。
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 11 Day 03：Validate scene 分组 的学习。

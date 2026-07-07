@@ -447,7 +447,31 @@ baseURL 来源：
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 为什么 BFF 网关不建议在每个 Controller 里直接写 HTTP 请求？
+
+参考答案：因为服务地址、超时、header、错误处理、日志、响应解析等会到处散落且不统一。封装成 `*Request` 类后，Controller 只关心业务调用，底层细节集中管理，改地址或加日志时改一处即可。
+
+### 8.2 `PayRequest`、`OrderRequest` 这类 `*Request` 类的职责是什么？
+
+参考答案：每个类专门封装对某一个内网服务的调用，通常“一个服务一个 Request 类，一个方法对应一个内网接口”，对外隐藏 baseURL、path 和 HTTP 细节。
+
+### 8.3 `getBaseUrl()` 和 path 分别决定什么？
+
+参考答案：baseURL 决定“请求哪个服务”（如 `http://pay-service.internal`），path 决定“请求这个服务里的哪个接口”（如 `/pay/methods`），两者拼接成最终请求地址。
+
+### 8.4 一个成熟的 HTTP Request 封装通常还包含哪些能力（至少说 3 个）？
+
+参考答案：baseURL 管理、path 拼接、参数传递、header/token 注入、超时设置、重试策略、日志记录、统一响应解析、异常转换等，不只是“发请求”。
+
+### 8.5 项目里的 `PayRequest` 和 axios 的 `axios.create({ baseURL })` 是什么类比关系？
+
+参考答案：两者都是先固定目标服务地址，再用具体方法拼接 path 和参数发请求。`PayRequest` 相当于在 axios 实例（固定 baseURL 和 timeout）之上再封装出的业务客户端。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -459,7 +483,7 @@ baseURL 来源：
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 05 Day 02：HTTP 客户端封装 的学习。

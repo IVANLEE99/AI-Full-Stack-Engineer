@@ -466,7 +466,55 @@ BFF → 订单/TP8 服务 → PayInternal → pay-service → 返回结果
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 `PayInternal` 到底是什么？它是支付业务逻辑吗？
+
+参考答案：
+
+> ✅ 不是。`PayInternal` 是“订单服务调用支付服务”的内网 HTTP 客户端封装，负责把 baseURL、path、鉴权、超时、trace_id、错误格式统一收口。真正的支付业务逻辑在支付服务里，`PayInternal` 只是打电话的那个窗口。
+
+---
+
+### 8.2 为什么订单服务不应该到处直接写裸 HTTP 请求？
+
+参考答案：
+
+> ✅ 因为 URL 写死难维护、超时不统一可能拖垮整个请求、鉴权不统一有安全风险、错误格式混乱、缺少 trace_id 无法排障、重试策略随意可能导致重复扣款。把调用收口到 `PayInternal` 就能统一治理这些问题。
+
+---
+
+### 8.3 服务间 HTTP 调用的 5 个核心要素是什么？
+
+参考答案：
+
+```text
+baseURL：目标服务基础地址，如 http://pay-service
+path：接口路径，如 /internal/pay/capture
+method：GET / POST 等
+headers：鉴权、X-Trace-Id 等请求头
+body/query：order_no、amount 等请求参数
+```
+
+---
+
+### 8.4 内网接口既然只在服务器之间调用，为什么还要鉴权？
+
+参考答案：
+
+> ✅ 内网也可能被误调用；某个服务被攻破后可能横向调用其他服务；支付、退款属于高风险业务，必须知道“是谁在调用我”。所以内网接口不是裸奔接口，常用内部 token、HMAC 签名、mTLS、白名单、时间戳+nonce 等方式鉴权。
+
+---
+
+### 8.5 timeout、retry、circuit breaker 分别解决什么问题？
+
+参考答案：
+
+> ✅ timeout 解决“下游太慢不能无限等”，retry 解决“网络抖动等临时失败”（但扣款、退款这类无幂等的操作不能盲目重试），circuit breaker（熔断）解决“下游持续故障时先断开一段时间，保护系统不被压垮”。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -478,7 +526,7 @@ BFF → 订单/TP8 服务 → PayInternal → pay-service → 返回结果
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 12 Day 01：PayInternal 跨服务调用 的学习。

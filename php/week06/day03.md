@@ -360,7 +360,49 @@ scenarios：
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 为什么订单接口不能只依赖前端校验？
+
+参考答案：
+
+> ✅ 前端校验只是用户体验，攻击者可以绕过前端直接请求接口，传空地址或负数数量。后端校验才是安全边界，必须最终确认参数完整、类型正确、场景匹配。
+
+---
+
+### 8.2 Yii2 Form 的 `rules()` 是做什么的？
+
+参考答案：
+
+> ✅ `rules()` 定义每个字段的校验规则，例如 `required`（必填）、`integer`（必须是整数）、`compare >= 1`（数量不能小于 1）、`string max 255`（字符串长度限制）。
+
+---
+
+### 8.3 `scenarios()` 为什么存在？
+
+参考答案：
+
+> ✅ 同一个 Form 可能服务多个接口（确认订单、创建订单等），不同场景需要校验的字段不完全一样。`scenarios()` 用来控制不同场景下可用/需校验的字段。
+
+---
+
+### 8.4 Form 校验和 Service 业务校验有什么区别？
+
+参考答案：
+
+> ✅ Form 负责基础校验（必填、类型、长度、数量下限）；Service 负责业务校验（地址是否属于当前用户、优惠券归属和状态、商品是否失效、库存是否充足）。两者都重要。
+
+---
+
+### 8.5 Yii2 Form 和 Node.js 的 Joi/Zod schema 怎么类比？
+
+参考答案：
+
+> ✅ Form Model ≈ Joi/Zod schema，`rules()` ≈ schema rules，`scenarios()` ≈ 不同接口用不同 schema，`validate()` ≈ `schema.parse()`，`getFirstError()` ≈ validation error message。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -372,7 +414,7 @@ scenarios：
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 06 Day 03：OrderConfirmForm 参数校验 的学习。

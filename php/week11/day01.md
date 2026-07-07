@@ -228,7 +228,49 @@ router → middleware → handler → service → model
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 TP8 的典型请求链路是怎样的？
+
+参考答案：
+
+> ✅ HTTP 请求 → Route 路由 → Middleware 中间件 → Controller → Validate → Service → Model/ORM → 统一响应。和 Yii2 链路很像，只是类名和目录不同。
+
+---
+
+### 8.2 TP8 里 Controller、Validate、Service、Model 分别负责什么？
+
+参考答案：
+
+> ✅ Controller 接收请求、调用校验和业务；Validate 校验参数；Service 编排业务逻辑；Model/ORM 负责读写数据库。每层职责单一，不要越界。
+
+---
+
+### 8.3 TP8 的 Validate 对应 Yii2 里的什么概念？
+
+参考答案：
+
+> ✅ 对应 Yii2 的 Form Model 的 `rules/scenarios`。两者都是集中做参数校验，只是 TP8 用独立的 Validate 类，Yii2 用 Form Model。
+
+---
+
+### 8.4 读一个陌生的 TP8 项目应该先做什么？
+
+参考答案：
+
+> ✅ 不要一上来读业务代码，先建地图：找入口（public/index.php）、路由、Controller、Validate、Service、Model 的位置，以及响应格式在哪里统一。
+
+---
+
+### 8.5 换框架为什么不用重新学后端？
+
+参考答案：
+
+> ✅ 因为后端分层思维是一致的：请求从路由进入 Controller，经校验，再到 Service 编排，最后由 Model 读写数据。换框架只是换目录和写法，核心问题不变。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -240,7 +282,7 @@ router → middleware → handler → service → model
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 11 Day 01：ThinkPHP 8 架构 的学习。

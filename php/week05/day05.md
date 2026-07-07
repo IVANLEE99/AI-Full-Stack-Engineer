@@ -350,7 +350,49 @@ PHP 项目里的 `PayRequest` 更接近最后这个业务 SDK。
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 Laravel 的 `Http::` 是干什么的？
+
+参考答案：
+
+> ✅ `Http::` 是 Laravel 提供的通用 HTTP 客户端（facade），用来方便地发起 GET/POST 等 HTTP 请求，支持设置 header、token、超时，以及用 `$response->json()` 解析响应。它像一个通用工具箱，本身不带任何业务含义。
+
+---
+
+### 8.2 项目里的 `PayRequest` 和通用的 `Http::` 有什么区别？
+
+参考答案：
+
+> ✅ `Http::` 是通用工具，每次调用都要自己写 URL、参数、超时和错误处理；`PayRequest` 是针对内网支付服务的业务化封装，把 baseURL、path、公共 header、超时、响应解析和错误处理都藏在类里，调用方只需 `$this->payRequest->methods($params)`。前者像工具箱，后者像团队定制好的服务 SDK。
+
+---
+
+### 8.3 既然有了 `Http::`，为什么项目还要再封装 `*Request`？
+
+参考答案：
+
+> ✅ 因为企业项目需要统一规范。如果到处直接写 `Http::get('http://xxx.internal/...')`，会导致 URL 散落、参数重复、错误处理和日志不一致、服务迁移时改动范围大。封装成 `*Request` 后，服务地址集中管理、方法名直接表达业务、header/timeout/日志统一，还更好测试（可以 mock）和更安全（鉴权、公参集中处理）。
+
+---
+
+### 8.4 用 Node.js 的 axios 来类比，`PayRequest` 更接近哪一层？
+
+参考答案：
+
+> ✅ 更接近业务 SDK 那一层。axios 里有三层：直接 `axios.get(url)`（≈ `Http::`）、`axios.create({baseURL})` 创建的 client 实例（≈ 配好 baseURL 的客户端）、再往上封装成 `payApi.methods(userId)` 的业务对象。PHP 的 `PayRequest` 对应的就是最后这个业务 SDK 层。
+
+---
+
+### 8.5 对照 `Http::` 与 `*Request` 时，有哪个常见误区要避免？
+
+参考答案：
+
+> ✅ 最常见的误区是认为两者“完全一样”。实际上 `Http::` 更通用、偏底层工具，`*Request` 更业务化、面向具体内网服务。另外还要记住：网关 Controller 应该薄、BFF 只负责聚合适配核心规则仍在下游服务、baseURL 要集中配置而不是随便写、白名单不等于不需要安全校验。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -362,7 +404,7 @@ PHP 项目里的 `PayRequest` 更接近最后这个业务 SDK。
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 05 Day 05：Laravel 对比与类比日 的学习。

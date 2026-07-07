@@ -308,7 +308,49 @@ MQ 投递支付成功事件
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 Laravel Queue 和 RabbitMQ 是同一层东西吗？
+
+参考答案：
+
+> ✅ 不是。Laravel Queue 是框架级的队列抽象，让你方便地写 Job、dispatch、handle；RabbitMQ 是更底层的消息中间件，负责消息的路由、排队、投递、确认和重试。Laravel Queue 甚至可以用 RabbitMQ 作为底层 driver。
+
+---
+
+### 8.2 Laravel Queue 底层可以用哪些 driver？
+
+参考答案：
+
+> ✅ 常见有 database、redis、sqs，以及通过扩展包接入的 rabbitmq。也就是说同一套 Job 代码，可以切换不同的底层队列实现。
+
+---
+
+### 8.3 BullMQ 和 RabbitMQ 的主要区别是什么？
+
+参考答案：
+
+> ✅ BullMQ 通常基于 Redis，适合做任务/Job 队列，延迟和重试很方便；RabbitMQ 是 AMQP Broker，更偏消息路由和事件驱动，用 exchange + route_key 把消息分发到多个 queue 和 consumer，多消费者广播更自然。
+
+---
+
+### 8.4 支付成功事件在 RabbitMQ、Laravel Queue、BullMQ 里写法有什么共同点？
+
+参考答案：
+
+> ✅ 三者都能实现异步处理，把“支付成功”这件事从主流程里解耦出去交给后台处理。区别只是抽象层级：RabbitMQ 直接 publish 消息到 exchange/route_key，Laravel 用 `Job::dispatch()`，BullMQ 用 `queue.add()`。
+
+---
+
+### 8.5 阶段② Week 05-08 的主线是什么？
+
+参考答案：
+
+> ✅ 前端下单 → BFF 网关 → 订单服务创建订单 → 支付服务创建支付 → 支付平台 Webhook 回调 → MQ 投递支付成功事件 → 消费者异步更新订单/通知/发权益。核心是同步下单支付链路 + 异步事件驱动处理。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -320,7 +362,7 @@ MQ 投递支付成功事件
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 08 Day 05：Laravel Queue 对比与阶段总结 的学习。

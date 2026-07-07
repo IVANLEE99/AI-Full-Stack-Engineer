@@ -250,7 +250,49 @@ TP8 ModelJoin 类似 repository/query object。
 
 ---
 
-## 8. 学习记录
+## 8. 今日自测题
+
+### 8.1 TP8 Model 主要负责什么？
+
+参考答案：
+
+> ✅ Model 是和数据库表最接近的一层，负责定义表名、主键、字段类型转换、封装基础查询、定义关联关系，处理数据访问细节。
+
+---
+
+### 8.2 ModelJoin 是用来做什么的？
+
+参考答案：
+
+> ✅ 专门封装复杂联表查询的查询对象。负责 join 哪些表、select 哪些字段、where 条件、order 排序、分页和统一返回结构，避免每个 Service 都自己写一遍 join。
+
+---
+
+### 8.3 为什么联表查询不建议直接写在 Service 里？
+
+参考答案：
+
+> ✅ 因为 Service 应该表达业务规则，如果堆满 join/where/field 的 SQL 拼接细节，Service 会变得像 SQL 脚本，不利于复用、测试和优化。
+
+---
+
+### 8.4 读 ModelJoin 时要关注哪些性能点？
+
+参考答案：
+
+> ✅ join 表数量、where 是否能走索引、select 是否避免 `select *`、order 字段是否有索引、分页是否有深分页问题、是否按商户/门店/用户限制了数据范围。
+
+---
+
+### 8.5 ModelJoin 可以类比 Node 里的什么？
+
+参考答案：
+
+> ✅ 类似 Prisma/TypeORM 里的 repository / query object，把复杂查询封装成一个方法，Service 只需要调用它，不用关心查询细节。
+
+---
+
+## 9. 学习记录
 
 | 记录项 | 内容 |
 |--------|------|
@@ -262,7 +304,7 @@ TP8 ModelJoin 类似 repository/query object。
 
 ---
 
-## 9. AI Review 提示词
+## 10. AI Review 提示词
 
 ```text
 我正在进行 Week 11 Day 04：Model 与 ModelJoin 的学习。
