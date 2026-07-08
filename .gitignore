@@ -1,0 +1,5 @@
+# macOS
+.DS_Store
+
+# Composer 依赖（自动生成，无需提交）
+vendor/

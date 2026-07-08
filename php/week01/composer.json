@@ -1,0 +1,103 @@
+{
+    "name": "yiisoft/yii2-app-advanced",
+    "description": "Yii 2 Advanced Project Template",
+    "keywords": ["yii2", "framework", "advanced", "project template"],
+    "homepage": "http://www.yiiframework.com/",
+    "type": "project",
+    "license": "BSD-3-Clause",
+    "support": {
+        "issues": "https://github.com/yiisoft/yii2/issues?state=open",
+        "forum": "http://www.yiiframework.com/forum/",
+        "wiki": "http://www.yiiframework.com/wiki/",
+        "irc": "irc://irc.freenode.net/yii",
+        "source": "https://github.com/yiisoft/yii2"
+    },
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^7.0",
+        "psr/log": "1.1.4",
+        "psr/cache": "1.0.1",
+        "yidas/yii2-bower-asset": "2.0.13",
+        "yidas/yii2-composer-bower-skip": "~2.0.0",
+        "yiisoft/yii2": "~2.0.14",
+        "yiisoft/yii2-bootstrap": "~2.0.0",
+        "yiisoft/yii2-swiftmailer": "~2.0.0 || ~2.1.0",
+        "yiisoft/yii2-httpclient": "~2.0.0",
+        "yiisoft/yii2-redis": "~2.0.0",
+      "linslin/yii2-curl": "*",
+      "yii2mod/yii2-enum": "*",
+      "php-amqplib/php-amqplib": ">=2.8.1",
+      "yiisoft/yii2-elasticsearch": "~2.1.0",
+      "braintree/braintree_php": "5.4.0",
+      "yiisoft/yii2-authclient": "^2.2",
+      "richweber/yii2-twitter": "^1.0",
+      "google/apiclient": "^2.13",
+      "facebook/graph-sdk": "^5.7",
+      "php-http/curl-client": "^2.2",
+      "phpoffice/phpexcel": "~1.8.2",
+      "guzzlehttp/psr7": "^1.7",
+      "klaviyo/php-sdk": "^2.2",
+      "facebook/php-business-sdk": "5.0.5",
+      "aws/aws-sdk-php": "^3.173",
+      "m35/thecsv": "^1.0",
+      "lcobucci/jwt": "3.3.3",
+      "google/analytics-data": "^0.4.0",
+      "ammarfaizi2/googletranslate": "^1.0",
+      "jaeger/querylist": "^4.2",
+      "tightenco/collect": "8.78.0",
+      "klarna/kco_rest": "v4.2.3",
+      "sensorsdata/sa-sdk-php": "v1.10.5",
+      "sensorsdata/abtesting-sdk-php": "0.0.5",
+      "yiisoft/yii2-queue": "^2.3",
+      "stripe/stripe-php": "^9.8",
+      "gaarf/xml-to-php-array": "^1.0",
+      "kreait/firebase-php": "5",
+      "google/cloud-retail": "^1.1",
+      "alibabacloud/dysmsapi-20170525": "2.0.23",
+        "http-interop/http-factory-guzzle": "^1.2",
+        "avalara/avataxclient": "^23.5",
+        "monolog/monolog": "^2.9",
+      "nesbot/carbon": "^2.67",
+        "hashids/hashids": "^4.1",
+        "kphoen/rulerz": "^0.21.1",
+        "giggsey/libphonenumber-for-php": "^8.13"
+    },
+    "require-dev": {
+        "yiisoft/yii2-debug": "~2.0.0",
+        "yiisoft/yii2-gii": "~2.0.0",
+        "yiisoft/yii2-faker": "~2.0.0",
+        "codeception/base": "^2.4.0",
+        "phpunit/phpunit": "~6.5.5",
+        "codeception/verify": "~1.0.0"
+    },
+    "autoload" : {
+      "files" : [
+        "common/libraries/App/fun_helpers.php"
+      ]
+    },
+    "provide": {
+        "bower-asset/bootstrap": "*",
+        "bower-asset/inputmask": "*",
+        "bower-asset/jquery": "*",
+        "bower-asset/punycode": "*",
+        "bower-asset/typeahead.js": "*",
+        "bower-asset/yii2-pjax": "*"
+    },
+    "config": {
+        "process-timeout": 1800,
+        "fxp-asset": {
+            "enabled": false
+        },
+        "secure-http": false,
+        "allow-plugins": {
+          "yiisoft/yii2-composer": true,
+          "php-http/discovery": true
+        }
+    },
+    "repositories":[
+        {
+            "type": "composer",
+            "url": "https://repo.packagist.org"
+        }
+    ]
+}
