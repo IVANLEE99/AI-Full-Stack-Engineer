@@ -327,6 +327,62 @@ class Demo
 }
 ```
 
+这段代码的意思是：
+
+```text
+Demo 类同时使用 Trait A 和 Trait B。
+但是 A 和 B 里面都有 hello() 方法，所以必须手动解决冲突。
+```
+
+逐行理解：
+
+```php
+use A, B {
+```
+
+表示 `Demo` 类同时引入 `A` 和 `B` 两个 Trait。
+
+```php
+A::hello insteadof B;
+```
+
+表示：如果调用 `$demo->hello()`，使用 `A` 里的 `hello()` 方法，而不是 `B` 里的。
+
+```php
+B::hello as helloFromB;
+```
+
+表示：虽然默认的 `hello()` 使用了 `A` 的版本，但 `B` 的 `hello()` 也没有丢掉，而是给它起了一个新名字：`helloFromB()`。
+
+所以可以这样调用：
+
+```php
+$demo = new Demo();
+
+echo $demo->hello();      // 输出 A
+echo $demo->helloFromB(); // 输出 B
+```
+
+最终输出是：
+
+```text
+AB
+```
+
+如果想让输出更清楚，可以加换行：
+
+```php
+echo $demo->hello() . PHP_EOL;
+echo $demo->helloFromB() . PHP_EOL;
+```
+
+输出：
+
+```text
+A
+B
+```
+
 小白阶段只需要知道：
 
 > Trait 很方便，但多个 Trait 有同名方法时会冲突，需要谨慎使用。
@@ -406,6 +462,106 @@ try {
 | `throw new Exception()` | 抛出异常 |
 | `catch (Exception $e)` | 捕获异常对象 |
 | `$e->getMessage()` | 获取异常消息 |
+
+#### `Exception $e` 详细说明
+
+```php
+catch (Exception $e) {
+    echo "捕获到异常：" . $e->getMessage() . PHP_EOL;
+}
+```
+
+这里的 `Exception $e` 可以拆成两部分理解：
+
+```text
+Exception  表示要捕获的异常类型
+$e         表示捕获到的异常对象变量
+```
+
+也就是说，当 `try` 里面执行到：
+
+```php
+throw new Exception("除数不能为 0");
+```
+
+PHP 会创建一个 `Exception` 异常对象，这个对象里面保存了错误信息。
+
+然后 `catch (Exception $e)` 会把这个异常对象接住，并放到变量 `$e` 里面。
+
+你可以把它理解成：
+
+```php
+$e = new Exception("除数不能为 0");
+```
+
+当然，真实执行时不是我们手动写这行代码，而是 PHP 在抛出异常和捕获异常时自动完成的。
+
+所以：
+
+```php
+$e->getMessage()
+```
+
+就是从异常对象 `$e` 里面取出错误消息。
+
+完整流程可以理解为：
+
+```text
+1. divide(10, 0) 被调用
+2. 判断发现除数是 0
+3. 执行 throw new Exception("除数不能为 0")
+4. PHP 创建一个 Exception 异常对象
+5. catch (Exception $e) 捕获这个异常对象
+6. `$e` 变量现在保存着这个异常对象
+7. `$e->getMessage()` 取出异常消息：除数不能为 0
+```
+
+常用的异常对象方法：
+
+| 方法 | 含义 |
+|---|---|
+| `$e->getMessage()` | 获取异常消息 |
+| `$e->getCode()` | 获取异常代码 |
+| `$e->getFile()` | 获取异常发生在哪个文件 |
+| `$e->getLine()` | 获取异常发生在哪一行 |
+| `$e->getTrace()` | 获取异常调用链数组 |
+| `$e->getTraceAsString()` | 获取字符串形式的异常调用链 |
+
+示例：
+
+```php
+try {
+    echo divide(10, 0);
+} catch (Exception $e) {
+    echo "错误消息：" . $e->getMessage() . PHP_EOL;
+    echo "错误文件：" . $e->getFile() . PHP_EOL;
+    echo "错误行号：" . $e->getLine() . PHP_EOL;
+}
+```
+
+可能输出：
+
+```text
+错误消息：除数不能为 0
+错误文件：/path/to/demo.php
+错误行号：8
+```
+
+注意：
+
+```php
+catch (Exception $e)
+```
+
+里面的 `$e` 只是一个变量名，也可以写成其他名字，例如：
+
+```php
+catch (Exception $error) {
+    echo $error->getMessage();
+}
+```
+
+但是实际开发中，大家通常习惯写 `$e`，因为它简单，并且表示 exception。
 
 ---
 
@@ -627,7 +783,172 @@ Model：映射表
 
 ---
 
-### 1.15 BaseService / BaseRepository 是什么？
+### 1.15 Prisma 是什么？
+
+`Prisma` 是 Node.js 生态里常用的数据库 ORM 工具。
+
+ORM 的全称是：
+
+```text
+Object Relational Mapping
+对象关系映射
+```
+
+小白可以先这样理解：
+
+```text
+Prisma 是一个帮 Node.js 程序操作数据库的工具。
+它可以让你少写 SQL，用更像 JavaScript / TypeScript 的方式查询数据库。
+```
+
+比如原来写 SQL 可能是：
+
+```sql
+SELECT * FROM users WHERE id = 1;
+```
+
+使用 Prisma 之后，可能写成：
+
+```ts
+const user = await prisma.user.findUnique({
+  where: {
+    id: 1,
+  },
+});
+```
+
+它们表达的意思差不多，都是查询 `id = 1` 的用户。
+
+---
+
+Prisma 通常由几部分组成：
+
+| 部分 | 作用 |
+|---|---|
+| `schema.prisma` | 定义数据库表结构和模型关系 |
+| `Prisma Client` | 自动生成的数据库操作代码 |
+| `prisma migrate` | 管理数据库迁移，例如建表、改字段 |
+| `prisma studio` | 可视化查看和编辑数据库数据 |
+
+---
+
+举个例子，假设数据库里有一张 `users` 表。
+
+在 Prisma 里可能这样定义模型：
+
+```prisma
+model User {
+  id    Int    @id @default(autoincrement())
+  name  String
+  email String @unique
+}
+```
+
+这个 `User` 模型大概对应数据库里的 `users` 表。
+
+然后在 Node.js / TypeScript 代码里可以这样查询：
+
+```ts
+const users = await prisma.user.findMany();
+```
+
+意思是：查询所有用户。
+
+新增用户：
+
+```ts
+const user = await prisma.user.create({
+  data: {
+    name: 'Tom',
+    email: 'tom@example.com',
+  },
+});
+```
+
+更新用户：
+
+```ts
+await prisma.user.update({
+  where: {
+    id: 1,
+  },
+  data: {
+    name: 'Jerry',
+  },
+});
+```
+
+删除用户：
+
+```ts
+await prisma.user.delete({
+  where: {
+    id: 1,
+  },
+});
+```
+
+---
+
+为什么前面说 `DAO / Prisma repository`？
+
+因为在 Node.js 项目里，Repository 经常负责调用 Prisma 查询数据库。
+
+例如：
+
+```ts
+class UserRepository {
+  async findById(id: number) {
+    return prisma.user.findUnique({
+      where: { id },
+    });
+  }
+}
+```
+
+这里的分工是：
+
+```text
+Service：决定业务规则
+Repository：负责查数据库
+Prisma：真正执行数据库操作
+Database：真实存储数据的地方
+```
+
+可以理解成：
+
+```text
+Controller -> Service -> Repository -> Prisma -> Database
+```
+
+---
+
+和 PHP 项目类比：
+
+| Node / Prisma | PHP 项目类比 |
+|---|---|
+| Prisma | ORM / 数据库操作工具 |
+| Prisma model | Model / 数据表映射 |
+| Prisma Client | 自动生成的数据库访问对象 |
+| Repository 调用 Prisma | Repository 调用 Model 或 SQL |
+| `findMany()` | 查询多条数据 |
+| `findUnique()` | 查询单条唯一数据 |
+| `create()` | 新增数据 |
+| `update()` | 更新数据 |
+| `delete()` | 删除数据 |
+
+小白记法：
+
+```text
+Prisma 不是业务层。
+Prisma 是数据库操作工具。
+Repository 可以封装 Prisma。
+Service 再调用 Repository 完成业务。
+```
+
+---
+
+### 1.16 BaseService / BaseRepository 是什么？
 
 企业项目里经常有：
 
