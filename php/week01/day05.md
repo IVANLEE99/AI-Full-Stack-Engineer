@@ -791,6 +791,15 @@ Node 等价：npm + import/export + class + mixin/composable
 
 ---
 
+## 配套深入文档
+
+今天涉及的知识点有两份配套详解,回看时可以对照:
+
+- [json_encode 详解](./json_encode.md) —— `json_encode` 的用法、`mixed` 类型、对象/数组编码规则、失败处理(`json_last_error_msg` / `JSON_THROW_ON_ERROR`)
+- [PHP 后端高频内置函数速查表](./php-builtin-functions.md) —— 字符串 / 数组 / JSON / HTTP / 类型判断 / 时间 / 文件 各类常用内置函数,含前端 JS 类比
+
+---
+
 ## 返回本周
 
 - [返回 Week 01 README](./README.md)
