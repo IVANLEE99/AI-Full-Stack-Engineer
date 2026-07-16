@@ -448,11 +448,22 @@ pay/pay/methods
 
 | 序号 | Module ID | Module class | 业务含义 |
 |---|---|---|---|
-| 1 |  |  |  |
-| 2 |  |  |  |
-| 3 |  |  |  |
-| 4 |  |  |  |
-| 5 |  |  |  |
+| 1 | `api` | `\fecshop\app\frontapi\modules\Api\Module` | 通用 API 接口 |
+| 2 | `order` | `\fecshop\app\frontapi\modules\Order\Module` | 订单业务 |
+| 3 | `home` | `\fecshop\app\frontapi\modules\Home\Module` | 首页业务 |
+| 4 | `product` | `\fecshop\app\frontapi\modules\Product\Module` | 商品业务 |
+| 5 | `catalog` | `\fecshop\app\frontapi\modules\Catalog\Module` | 商品分类业务 |
+| 6 | `common` | `\fecshop\app\frontapi\modules\Common\Module` | 公共功能 |
+| 7 | `market` | `\fecshop\app\frontapi\modules\Market\Module` | 营销活动业务 |
+| 8 | `user` | `\fecshop\app\frontapi\modules\User\Module` | 用户业务 |
+| 9 | `pay` | `\fecshop\app\frontapi\modules\Pay\Module` | 支付业务 |
+| 10 | `content` | `\fecshop\app\frontapi\modules\Content\Module` | 内容业务 |
+| 11 | `outer` | `\fecshop\app\frontapi\modules\Outer\Module` | 外部接口或第三方集成 |
+| 12 | `customer-service` | `\fecshop\app\frontapi\modules\CustomerService\Module` | 客户服务业务 |
+| 13 | `ads` | `\fecshop\app\frontapi\modules\Ads\Module` | 广告业务 |
+| 14 | `udesk` | `\fecshop\app\frontapi\modules\Udesk\Module` | Udesk 客服系统集成 |
+| 15 | `v2` | `\fecshop\app\frontapi\modules\V2\Module` | V2 版本接口 |
+| 16 | `store` | `\fecshop\app\frontapi\modules\Store\Module` | 店铺业务 |
 
 至少列 5 个。
 
