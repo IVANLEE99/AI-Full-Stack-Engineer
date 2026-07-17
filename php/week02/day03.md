@@ -256,31 +256,107 @@ public function beforeAction($action): bool
 
 ### 1.7 behaviors 和 beforeAction 的关系
 
-小白可以先这样理解：
+三者属于不同层次：
 
 ```text
-behaviors()：声明这个 Controller 挂哪些 Filter
-Filter::beforeAction()：Filter 真正执行前置逻辑
-Controller::beforeAction()：Controller 自己也可以做前置逻辑
+behaviors()：配置层，声明 Controller 挂载哪些 Behavior/Filter
+Filter::beforeAction()：过滤器执行层，真正执行某一项公共检查
+Controller::beforeAction()：生命周期层，Controller 执行 action 前的统一入口
 ```
 
-请求进入 action 前，大致会发生：
+需要注意，Behavior 不一定是 Filter；Filter 是专门过滤 action 请求的一类 Behavior。
+
+#### `behaviors()`：声明要挂载什么
+
+```php
+public function behaviors()
+{
+    return [
+        'loginAuthFilter' => [
+            'class' => LoginAuthFilter::class,
+        ],
+    ];
+}
+```
+
+这段配置告诉 Yii2：当前 Controller 需要使用 `LoginAuthFilter`。它负责声明和组装，不直接实现 token 校验逻辑。
+
+#### `Filter::beforeAction()`：执行具体检查
+
+```php
+class LoginAuthFilter extends ActionFilter
+{
+    public function beforeAction($action): bool
+    {
+        // 检查 token 和用户登录状态
+        return true;
+    }
+}
+```
+
+Filter 的返回值决定请求能否继续：
+
+- 返回 `true`：允许后续 Filter 和目标 action 继续执行
+- 返回 `false`：中断当前 action
+
+#### `Controller::beforeAction()`：进入 action 前的控制器入口
+
+`AuthApiController` 中的实现是：
+
+```php
+public function beforeAction($action)
+{
+    if (in_array(strtolower(\Yii::$app->request->getPathInfo()), $this->freeLoginAuthApiList)) {
+        $this->loginAuth = false;
+    }
+
+    return parent::beforeAction($action);
+}
+```
+
+它先执行当前 Controller 自己的白名单判断，再把控制权交给父类：
+
+```php
+return parent::beforeAction($action);
+```
+
+其中：
+
+- `parent` 首先指向当前类的父类 `BaseApiController`；如果它没有重写该方法，PHP 会继续沿继承链调用祖先实现
+- `$action` 是 Yii2 即将执行的目标 action 对象
+- `return` 会把父类的布尔结果交还给 Yii2
+
+不能随意省略 `return`。如果方法最终返回 `null`，Yii2 会把它当作假值，目标 action 可能不会执行。
+
+#### 当前类中的实际关系
+
+在 `AuthApiController` 这段代码里，可以按下面的顺序理解：
 
 ```text
 Yii Application
   ↓
 找到 Controller/action
   ↓
-加载 Controller behaviors
+调用 AuthApiController::beforeAction($action)
   ↓
-执行 Filter beforeAction
+判断路由白名单，设置 $loginAuth
   ↓
-执行 Controller beforeAction
+调用 parent::beforeAction($action)
+  ↓
+触发 action 前置事件并使用 behaviors
+  ↓
+执行已挂载 Filter 的 beforeAction()
+  ↓
+所有检查都返回 true
   ↓
 执行 actionXxx
 ```
 
-真实 Yii2 内部顺序更复杂，但今天先掌握这个心智模型即可。
+因此，两个同名方法不要混淆：
+
+> `Controller::beforeAction()` 是生命周期入口；`Filter::beforeAction()` 是某个过滤器收到前置事件后执行的检查逻辑。
+
+这里先设置 `$loginAuth` 再调用父类，是为了让后续 behaviors 根据该值决定是否挂载 `LoginAuthFilter`。如果任意父类前置逻辑或 Filter 返回 `false`，请求都会在进入业务 action 前终止。
 
 ---
 
@@ -403,6 +479,165 @@ freeLoginAuthApiList
 - 支付回调来自第三方
 - 公共配置接口给未登录首页使用
 - 商品详情等公开内容
+
+---
+
+### 2.5 `AuthApiController.php` 阅读笔记
+
+#### 这个类负责什么？
+
+```php
+class AuthApiController extends BaseApiController
+```
+
+`AuthApiController` 是一个带“登录认证 + 请求签名校验”能力的 Controller 基类。业务 Controller 继承它后，不需要在每个 action 中重复配置这些公共检查。
+
+这个文件本身没有业务 action，主要完成三件事：
+
+1. 根据请求路径判断当前接口是否免登录
+2. 动态挂载登录认证和签名校验 Filter
+3. 提供获取客户端 IP 的辅助方法
+
+#### 两个认证 Filter
+
+| behavior key | Filter class | 挂载条件 | 从命名推断的职责 |
+|---|---|---|---|
+| `loginAuthFilter` | `LoginAuthFilter` | `$loginAuth === true` | 检查用户是否已经登录 |
+| `VerifySignature` | `VerifySignatureFilter` | 始终挂载 | 校验请求签名，防止参数被篡改或伪造 |
+
+这里要特别区分：
+
+> “免登录”只是不挂载 `LoginAuthFilter`，并不代表请求可以跳过 `VerifySignatureFilter`。
+
+`parent::behaviors()` 还可能返回 `BaseApiController` 中声明的其他 Filter。只阅读当前文件，不能断言完整 Filter 链只有上面两个。
+
+#### 白名单如何生效？
+
+默认值为：
+
+```php
+private $loginAuth = true;
+```
+
+请求进入 Controller 后，`beforeAction()` 读取当前请求路径：
+
+```php
+strtolower(\Yii::$app->request->getPathInfo())
+```
+
+如果小写后的路径存在于 `$freeLoginAuthApiList` 中，就执行：
+
+```php
+$this->loginAuth = false;
+```
+
+随后调用 `parent::beforeAction($action)`。Yii2 在处理 Controller 的 action 前置事件时会使用 behaviors；此时 `behaviors()` 发现 `$loginAuth` 为 `false`，便不会添加 `LoginAuthFilter`。
+
+简化流程：
+
+```text
+HTTP 请求
+  ↓
+创建 AuthApiController 的子类
+  ↓
+beforeAction() 读取并转为小写的 pathInfo
+  ↓
+路径是否在 freeLoginAuthApiList 中？
+  ├─ 是：loginAuth = false，不挂载 LoginAuthFilter
+  └─ 否：loginAuth = true，挂载 LoginAuthFilter
+  ↓
+始终挂载 VerifySignatureFilter
+  ↓
+所有前置检查通过
+  ↓
+执行目标 action
+```
+
+#### 典型免登录接口
+
+| 接口 | 可能免登录的原因 |
+|---|---|
+| `user/code/login` | 登录接口本身不能要求用户已经登录 |
+| `user/code/verify` | 登录/注册验证码验证发生在建立登录态之前 |
+| `pay/pay/worldpay-webhook` | Webhook 由第三方支付平台回调 |
+| `pay/pay/stripe-confirm-callback` | 支付确认回调可能不是由已登录浏览器直接发起 |
+| `market/coupon/get-subscribe-coupon-setting` | 未登录访客也可能需要读取订阅券配置 |
+
+这些原因是根据路由名称做的合理推断。真实放权依据仍需结合对应 action、产品需求和 Filter 源码确认。
+
+#### `in_array()` 在这里做什么？
+
+```php
+in_array($path, $this->freeLoginAuthApiList)
+```
+
+它判断完整路由字符串是否出现在白名单数组中。这里是精确匹配，不是前缀匹配。例如白名单中存在：
+
+```text
+user/code/login
+```
+
+并不会自动放行：
+
+```text
+user/code/login-by-email
+```
+
+代码没有传入第三个参数 `true`，因此使用 PHP 的宽松比较。当前数组和待比较值都是字符串，通常不会造成问题；认证白名单更稳妥的写法仍是使用严格比较：
+
+```php
+in_array($path, $this->freeLoginAuthApiList, true)
+```
+
+#### 为什么既有 `::class` 又有 `className()`？
+
+```php
+LoginAuthFilter::class
+VerifySignatureFilter::className()
+```
+
+两者都用于得到完整类名字符串。
+
+- `LoginAuthFilter::class` 是 PHP 原生语法
+- `VerifySignatureFilter::className()` 是 Yii2 较旧代码中常见的写法
+
+在现代 PHP/Yii2 代码中通常优先统一使用 `::class`，但这里的两种写法不影响理解 Filter 配置。
+
+#### `getRealIp()` 阅读
+
+该方法先读取代理转发头，再回退到直接连接地址：
+
+```text
+HTTP_X_FORWARDED_FOR
+  ↓ 为空时
+REMOTE_ADDR
+  ↓
+按逗号拆分
+  ↓
+取第一个 IP 并去除首尾空格
+```
+
+`HTTP_X_FORWARDED_FOR` 可能长这样：
+
+```text
+203.0.113.10, 10.0.0.8, 10.0.0.9
+```
+
+当前实现会返回 `203.0.113.10`。
+
+需要注意：客户端可以伪造 `X-Forwarded-For`。只有在请求一定经过可信代理，并且代理会清理、重写该请求头时，才能把第一个值当作真实客户端 IP。Yii2 项目通常应结合可信代理配置读取 `Yii::$app->request->userIP`。
+
+#### 阅读后需要继续确认的问题
+
+1. `BaseApiController::behaviors()` 还注册了哪些 Filter？这决定完整执行链和实际顺序。
+2. `LoginAuthFilter` 如何读取 token、如何写入用户信息、失败时返回什么响应？当前文件没有答案。
+3. `VerifySignatureFilter` 是否对所有白名单路由都适用，第三方 webhook 如何完成签名校验？
+4. 白名单中 `order/order/get-order-info` 重复出现，功能上影响不大，但说明列表需要维护和去重。
+5. `$loginAuth` 的值依赖 `beforeAction()` 在 behaviors 真正生效前完成修改；如果其他代码提前读取并初始化 behaviors，需要结合 Yii2 实际生命周期确认行为。
+
+#### 一句话总结
+
+> `AuthApiController` 先用路由白名单决定是否挂载登录 Filter，再让所有请求继续经过签名 Filter；免登录不等于免签名，也不等于接口完全公开。
 
 ---
 
