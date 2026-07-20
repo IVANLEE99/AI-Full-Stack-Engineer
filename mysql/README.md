@@ -65,16 +65,30 @@
 
 ## 4. 环境准备（Day 0，约 30–60 分钟）
 
-任选其一即可：
+任选其一即可。
+
+### 4.1 macOS Homebrew（摘要）
 
 ```bash
-# macOS Homebrew 示例
+# macOS Homebrew 示例（默认 formula，当前多为 MySQL 9.x）
 brew install mysql
 brew services start mysql
-mysql -u root -p
+mysql -u root          # 新装通常无密码；若已设置密码再改用 mysql -u root -p
 ```
 
-或 Docker：
+跟本教程更贴合的 **8.4**（keg-only，需把 bin 加进 PATH）：
+
+```bash
+brew install mysql@8.4
+brew services start mysql@8.4
+export PATH="$(brew --prefix mysql@8.4)/bin:$PATH"
+mysql -u root
+```
+
+**完整说明（安装、PATH、services、导入 labs、排错、卸载）：**  
+→ [macos-homebrew-mysql.md](./macos-homebrew-mysql.md)
+
+### 4.2 Docker（备选）
 
 ```bash
 docker run --name mysql8 \
@@ -82,6 +96,8 @@ docker run --name mysql8 \
   -e MYSQL_DATABASE=shop_lab \
   -p 3306:3306 -d mysql:8.4
 ```
+
+### 4.3 客户端与实验库
 
 推荐客户端（任选）：
 
@@ -92,6 +108,7 @@ docker run --name mysql8 \
 初始化实验库：
 
 ```bash
+# 无密码时去掉 -p
 mysql -u root -p < labs/01_schema.sql
 mysql -u root -p shop_lab < labs/02_seed.sql
 ```
@@ -211,9 +228,10 @@ Controller → Service（业务决策）→ Repository（SQL/持久化）→ MyS
 
 ```text
 mysql/
-├── README.md                 # 本文件
-├── mysql-pro-agent.md        # MySQL 专家 Agent 规范
-├── day01.md … day07.md       # 每日教程
+├── README.md                   # 本文件
+├── macos-homebrew-mysql.md     # macOS Homebrew 安装与排错详解
+├── mysql-pro-agent.md          # MySQL 专家 Agent 规范
+├── day01.md … day07.md         # 每日教程
 └── labs/
     ├── 01_schema.sql
     ├── 02_seed.sql
