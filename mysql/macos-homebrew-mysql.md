@@ -439,9 +439,15 @@ tail -n 80 "$(brew --prefix)/var/mysql"/$(hostname).err 2>/dev/null \
 ### 10.3 `Access denied for user 'root'@'localhost'`
 
 - 密码已设置却没加 `-p`
-- 或曾经装过旧 MySQL，数据目录里已有旧账号体系
+- 或曾经装过旧 MySQL / **官方 DMG 与 Homebrew 并存**，连到了带密码的那一套
+- Homebrew 因 3306 被占用未启动，客户端实际打到官方实例
 
-处理方向：确认连的是当前 brew 实例；必要时查阅官方/社区「reset root password」流程（**先备份 datadir**，本教程不展开生产级救灾）。
+处理方向：
+
+1. `ps aux | grep '[m]ysqld'` 确认当前权威实例与 datadir  
+2. 有密码：`mysql -u root -p`  
+3. **官方包密码遗忘**：按 [reset-official-mysql-root.md](./reset-official-mysql-root.md) 重置（先备份 datadir）  
+4. 仅想用 Homebrew：先停官方服务再 `brew services start mysql`（见上文端口冲突）
 
 ### 10.4 `command not found: mysql`
 

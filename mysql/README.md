@@ -88,6 +88,9 @@ mysql -u root
 **完整说明（安装、PATH、services、导入 labs、排错、卸载）：**  
 → [macos-homebrew-mysql.md](./macos-homebrew-mysql.md)
 
+**官方安装包 root 密码遗忘重置（skip-grant-tables）：**  
+→ [reset-official-mysql-root.md](./reset-official-mysql-root.md)
+
 ### 4.2 Docker（备选）
 
 ```bash
@@ -228,10 +231,11 @@ Controller → Service（业务决策）→ Repository（SQL/持久化）→ MyS
 
 ```text
 mysql/
-├── README.md                   # 本文件
-├── macos-homebrew-mysql.md     # macOS Homebrew 安装与排错详解
-├── mysql-pro-agent.md          # MySQL 专家 Agent 规范
-├── day01.md … day07.md         # 每日教程
+├── README.md                      # 本文件
+├── macos-homebrew-mysql.md        # macOS Homebrew 安装与排错详解
+├── reset-official-mysql-root.md   # 官方包 root 密码重置
+├── mysql-pro-agent.md             # MySQL 专家 Agent 规范
+├── day01.md … day07.md            # 每日教程
 └── labs/
     ├── 01_schema.sql
     ├── 02_seed.sql
