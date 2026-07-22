@@ -99,6 +99,9 @@ CREATE TABLE users (
   COMMENT='用户表';
 ```
 
+**逐字段详解（类型、约束、引擎、字符集）：**  
+→ [create-table-users-explained.md](./create-table-users-explained.md)
+
 **字段类型选择（Day 1 最小集）：**
 
 | 场景 | 推荐 |

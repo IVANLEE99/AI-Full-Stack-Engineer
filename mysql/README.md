@@ -231,11 +231,12 @@ Controller → Service（业务决策）→ Repository（SQL/持久化）→ MyS
 
 ```text
 mysql/
-├── README.md                      # 本文件
-├── macos-homebrew-mysql.md        # macOS Homebrew 安装与排错详解
-├── reset-official-mysql-root.md   # 官方包 root 密码重置
-├── mysql-pro-agent.md             # MySQL 专家 Agent 规范
-├── day01.md … day07.md            # 每日教程
+├── README.md                         # 本文件
+├── macos-homebrew-mysql.md           # macOS Homebrew 安装与排错详解
+├── reset-official-mysql-root.md      # 官方包 root 密码重置
+├── create-table-users-explained.md    # CREATE TABLE users 逐段详解
+├── mysql-pro-agent.md                # MySQL 专家 Agent 规范
+├── day01.md … day07.md               # 每日教程
 └── labs/
     ├── 01_schema.sql
     ├── 02_seed.sql
