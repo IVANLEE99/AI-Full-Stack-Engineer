@@ -178,6 +178,9 @@ UPDATE users SET status = 0 WHERE id = 3 LIMIT 1;
 
 `TRUNCATE` / `DROP`：结构级破坏操作，本教程仅在本地实验库使用，且先确认库名。
 
+**详解（DELETE vs TRUNCATE vs DROP、确认库名、本地安全练习）：**  
+→ [truncate-drop-explained.md](./truncate-drop-explained.md)
+
 ---
 
 ## 5. 约束：正确性的第一道防线

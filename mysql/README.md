@@ -235,6 +235,7 @@ mysql/
 ├── macos-homebrew-mysql.md           # macOS Homebrew 安装与排错详解
 ├── reset-official-mysql-root.md      # 官方包 root 密码重置
 ├── create-table-users-explained.md    # CREATE TABLE users 逐段详解
+├── truncate-drop-explained.md         # TRUNCATE / DROP 与 DELETE 对照
 ├── mysql-pro-agent.md                # MySQL 专家 Agent 规范
 ├── day01.md … day07.md               # 每日教程
 └── labs/

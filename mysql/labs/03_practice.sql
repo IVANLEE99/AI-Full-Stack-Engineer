@@ -8,7 +8,22 @@ USE shop_lab;
 
 -- Q1: create tags table (id, name unique, created_at)
 -- YOUR SQL:
+create table tags (
+   id bigint unsigned not null auto_increment primary key,
+   name varchar(64) not null,
+   created_at datetime(3) not null default current_timestamp(3),
+   unique key uk_tags_name (name)
+) engine=innodb default charset=utf8mb4;
 
+insert into tags (name) values ('tag1'), ('tag2'), ('tag3');
+
+select * from tags order by id desc;
+
+update tags set name = 'tag001' where id = 1;
+
+delete from tags where id = 2;
+
+insert into tags (name) values ('tag3'), ('tag5');
 
 -- Ref:
 -- CREATE TABLE tags (
