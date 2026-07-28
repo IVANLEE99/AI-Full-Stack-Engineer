@@ -278,6 +278,12 @@ SELECT ... WHERE id = ?
 
 ---
 
+## 5 分钟快速复习
+
+赶时间时可用 → [day01-review.md](./day01-review.md)（速查卡 + 4 道自测）
+
+---
+
 ## 下一步
 
 → [Day 02：查询进阶](./day02.md)
