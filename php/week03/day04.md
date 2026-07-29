@@ -278,13 +278,13 @@ token 缓存 7 天
 | 观察点 | 记录 |
 |---|---|
 | 文件路径 | `mall-core/common/redis/order/OrderRedis.php` |
-| class 名 |  |
-| key 前缀 |  |
-| get 方法 |  |
-| set 方法 |  |
-| delete 方法 |  |
-| 过期时间 |  |
-| 缓存数据 |  |
+| class 名 | `OrderRedis`（`namespace common\redis\order`，继承 `\common\BaseRedis`） |
+| key 前缀 | 本类无独立前缀常量；硬编码 `bm:order:`，轮询 key 走 `self::$key['order']['loop_pay_status']` |
+| get 方法 | 有：`getOrderLocked`、`getLoopOrderPayStatusStartTime`、`getNextDayDeliveryPreviewNotice`、`getNextDayDeliveryNotPushOmsNotice` |
+| set 方法 | 有：对应 `set*`，底层用 `setex`（写值 + 过期一次完成） |
+| delete 方法 | 有：`delLoopOrderPayStatusStartTime`（`del`） |
+| 过期时间 | 无单独 `expire`/`ttl`；写在 `setex` 参数里（锁定 600s、轮询 86400s、次日达提醒默认 5 天） |
+| 缓存数据 | String；多为标记值 `1`，轮询场景存时间戳整数（非订单详情 JSON） |
 
 ---
 
