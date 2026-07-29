@@ -269,6 +269,19 @@ interface Order {
 
 ---
 
+## 4.1 参考资料 / 跳转链接
+
+- ER 图入门手册：`php/er-diagram-10min-quickstart.md`
+- Mermaid 10 分钟速学：`php/mermaid-10min-quickstart.md`
+
+画完练习 ER 图后，回看上述手册重点对照：
+
+1. `order -> order_goods` 是否是一对多
+2. `order -> order_address` 是否是一对一
+3. Mermaid `erDiagram` 的关系符号是否写对
+
+---
+
 ## 5. AI Review 提问
 
 ```text
