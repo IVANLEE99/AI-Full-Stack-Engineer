@@ -67,6 +67,8 @@ LIMIT 20;
 
 无用户的订单（脏数据）不会出现在结果中。
 
+**延伸阅读：** [inner-left-join-explained.md](./inner-left-join-explained.md)（`JOIN` / `INNER JOIN` / `LEFT JOIN` 详解、mysql-pro 检查清单）
+
 ---
 
 ## 3. LEFT JOIN

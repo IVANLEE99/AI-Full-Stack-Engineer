@@ -219,6 +219,8 @@ SELECT COUNT(*) FROM orders;
 SELECT COUNT(*) FROM order_items;
 ```
 
+**延伸阅读：** [day01-import-lab-explained.md](./day01-import-lab-explained.md)（两条导入命令逐段说明、常见报错与 PATH 问题）
+
 ---
 
 ## 7. 与 ORM 的关系（预告）
