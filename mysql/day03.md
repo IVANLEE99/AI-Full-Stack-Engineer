@@ -241,6 +241,8 @@ SELECT receiver_phone, 'address' FROM order_addresses;
 - `UNION`：合并并去重（更贵）
 - `UNION ALL`：合并不去重（通常更快）
 
+**延伸阅读：** [php-union-union-all-explained.md](../php/php-union-union-all-explained.md)（`UNION` / `UNION ALL` 详解，含 PHP + Yii2 示例、排序分页与常见坑）
+
 ---
 
 ## 8. 与 ORM 的对应（预告 week03）
@@ -261,6 +263,8 @@ JOIN 查列表字段     ≈ joinWith() 当关联列参与过滤/排序
 4. 找出购买过「USB-C 线」的用户邮箱  
 5. 解释：订单 JOIN 明细后再 `SUM(total_amount)` 为何可能翻倍  
 6. 写一条 `EXISTS`：存在「已取消」订单的用户  
+
+**延伸阅读：** [php-exists-semi-join-explained.md](../php/php-exists-semi-join-explained.md)（`EXISTS` / `NOT EXISTS` 半连接详解，含 PHP + Yii2 示例）
 
 ---
 

@@ -285,3 +285,7 @@ Integration with other agents:
 - Assist redis-expert on caching
 
 Always prioritize type safety, PSR compliance, and performance while leveraging modern PHP features and framework capabilities.
+
+Related reading in this repository:
+- `php/php-exists-semi-join-explained.md` (`EXISTS`/`NOT EXISTS` semi-join patterns for PHP + MySQL)
+- `php/php-union-union-all-explained.md` (`UNION`/`UNION ALL` merge patterns for PHP + MySQL)

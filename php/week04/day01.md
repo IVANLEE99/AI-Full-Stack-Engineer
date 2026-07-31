@@ -352,21 +352,21 @@ mall-core/common/libraries/App/Utils/ConfigHelper.php
 
 | 问题 | 记录 |
 |---|---|
-| `g_config()` 在哪个文件 |  |
-| 参数列表 |  |
-| 默认值如何处理 |  |
-| 配置来源 |  |
-| 是否使用缓存 |  |
-| 最终返回值 |  |
+| `g_config()` 在哪个文件 | `common/libraries/App/fun_helpers.php` |
+| 参数列表 | `$module`, `$key`, `$default = null`（共 3 个） |
+| 默认值如何处理 | 找不到 key 时用 `?? $default`；无效 module 生产环境也返回 `$default` |
+| 配置来源 | `{NACOS_CONFIG_DIR}/{module}.ini`（默认 `/data/www/nacos-config`），经 `ConfigHelper::config()` |
+| 是否使用缓存 | 有：`ConfigHelper` 内 `static $configs`，同进程同 module 只读一次 ini |
+| 最终返回值 | 配置值；找不到则 `$default`；`$key` 为空则返回整个 module 数组 |
 
 阅读 `ConfigHelper` 时先找：
 
 | 问题 | 记录 |
 |---|---|
-| 有哪些 module 常量 |  |
-| 有哪些 key 常量 |  |
-| 哪些模块最常用 |  |
-| 是否有注释说明 |  |
+| 有哪些 module 常量 | `$MALL_COMMON` `$CONTENT` `$GOODS` `$MARKET` `$ORDER` `$OPERATE` `$PAY` `$SITE` `$USER` `$AFTERSALE` |
+| 有哪些 key 常量 | 本类主要是 module 常量；具体 key 多为方法内字符串（如 `IS_RECORD_LOG`、`GTM_URL_{site}`） |
+| 哪些模块最常用 | `$SITE`、`$PAY`、`$ORDER`、`$GOODS`、`$MALL_COMMON` |
+| 是否有注释说明 | 有：类注释「配置中心」；`config()` 说明无效 module 非生产抛异常 |
 
 ---
 
@@ -388,11 +388,13 @@ mall-core/common/libraries/App/Utils/ConfigHelper.php
 
 | 配置项 | 记录 |
 |---|---|
-| `g_config` 参数 |  |
-| 默认值如何处理 |  |
-| 配置来源 |  |
-| ConfigHelper 模块常量 |  |
-| 你看不懂的地方 |  |
+| `g_config` 参数 | `string $module, string $key, $default = null` → 转调 `ConfigHelper::config(...)` |
+| 默认值如何处理 | `$configs[$module][$key] ?? $default`；无效 module：生产返回 `$default`，非生产抛异常 |
+| 配置来源 | Nacos 本地目录下的 `{module}.ini`，`parse_ini_file(..., INI_SCANNER_RAW)` |
+| ConfigHelper 模块常量 | `mall_common` / `content` / `goods` / `market` / `order` / `operate` / `pay` / `site` / `user` / `aftersale` |
+| 你看不懂的地方 | `g_config`/`config` 本身不做类型转换；业务侧常见 `intval()`、`(string)`；用 `function_exists` 防重复定义 |
+
+**延伸阅读：** [g-config-fun-helpers-explained.md](../g-config-fun-helpers-explained.md)（阅读清单答案 + `function_exists` / `defined` / `constant`）
 
 ---
 
