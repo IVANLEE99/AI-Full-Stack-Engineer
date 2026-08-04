@@ -181,6 +181,8 @@ version                   -- 乐观锁可选
 - 唯一键是否允许「删除后再注册同一 email」→ 往往需要 **部分唯一** 策略或把 email 改写
 - 所有查询默认过滤已删数据
 
+**延伸阅读：** [soft-delete-best-practices.md](./soft-delete-best-practices.md)（唯一策略三选一、Repository 默认过滤、审计字段）
+
 ---
 
 ## 8. 精读实验 Schema
