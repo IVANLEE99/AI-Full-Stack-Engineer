@@ -55,6 +55,8 @@
 
 故：主键尽量稳定、尽量短；无业务主键可用自增 BIGINT。
 
+**延伸阅读：** [innodb-clustered-secondary-index.md](./innodb-clustered-secondary-index.md)（聚簇索引 vs 二级索引、回表与覆盖索引详解）
+
 ---
 
 ## 3. 联合索引与最左前缀
@@ -79,6 +81,8 @@ KEY idx_orders_user_status_created (user_id, status, created_at)
 3. 考虑排序/分组是否可被同一索引满足  
 
 不要死记「高基数列永远放最前」——要看 **完整访问路径**（过滤 + 排序 + 覆盖）。
+
+**延伸阅读：** [btree-day05-walkthrough.md](./btree-day05-walkthrough.md)（B+Tree 在五条 SQL 上怎么走：最左前缀、回表、覆盖）
 
 ---
 
