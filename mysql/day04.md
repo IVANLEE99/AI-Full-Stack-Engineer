@@ -128,6 +128,8 @@ PRIMARY KEY (product_id, tag_id)
 
 反范式必须写清：**谁更新、何时失效、不一致窗口是否可接受**。
 
+**延伸阅读：** [database-normal-forms-5min.md](./database-normal-forms-5min.md)（1NF / 2NF / 3NF 五分钟详解 + 订单域对照）
+
 ---
 
 ## 5. 类型选择清单（mysql-pro 对齐）
