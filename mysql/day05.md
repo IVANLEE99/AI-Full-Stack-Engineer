@@ -157,6 +157,8 @@ SELECT ...;
 
 **安全：** `EXPLAIN ANALYZE` 会执行语句；只在本地 lab 或已授权的只读副本上对安全 SELECT 使用。
 
+**延伸阅读：** [explain-orders-user-status-demo.md](./explain-orders-user-status-demo.md)（本查询 EXPLAIN 逐列精读：`ref` / `key_len` / `Backward index scan`）
+
 ---
 
 ## 7. 为 shop_lab 设计索引
