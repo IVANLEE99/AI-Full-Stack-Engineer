@@ -123,6 +123,8 @@ UPDATE / DELETE
 
 两阶段提交：保证 redo 与 binlog 一致（面试考点，理解「为什么需要」即可）。
 
+**延伸阅读：** [mvcc-for-update-explained.md](./mvcc-for-update-explained.md)（MVCC 三零件、Read View、FOR UPDATE 用法与扣库存对比）
+
 ---
 
 ## 5. 锁：先建立正确粒度
@@ -135,6 +137,8 @@ UPDATE / DELETE
 | 表锁 | 粗；DDL/部分操作 |
 | 间隙锁 Gap | 锁索引间隙，防幻插 |
 | 临键锁 Next-Key | 行锁 + 间隙 |
+
+**延伸阅读：** [innodb-lock-types-explained.md](./innodb-lock-types-explained.md)（S/X 兼容矩阵、行锁/间隙锁/临键锁、与 MVCC 对照）
 
 业务最常用模式：
 
