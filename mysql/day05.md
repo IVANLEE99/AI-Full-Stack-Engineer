@@ -205,6 +205,8 @@ ALTER TABLE orders
 
 对比前后 `EXPLAIN`，记在笔记：**type / key / rows / Extra**。
 
+**延伸阅读：** [alter-index-guide.md](./alter-index-guide.md)（如何改索引：`DROP`/`ADD`、1061 报错、EXPLAIN 验证）
+
 ---
 
 ## 8. 深分页：OFFSET vs Keyset

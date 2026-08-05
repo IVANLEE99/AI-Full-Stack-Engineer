@@ -143,7 +143,7 @@ class ConfigHelper
 
     /**
      * 是否开启us站点的重定向
-     * us.homary.com
+     * us.bm.com
      *
      * @return bool
      */

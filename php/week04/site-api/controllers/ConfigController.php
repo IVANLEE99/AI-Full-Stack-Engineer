@@ -26,7 +26,7 @@ class ConfigController extends BaseApiController
 
     /**
      * 获取配置信息
-     * http://site.internal.homary.com/config/get-config-data
+     * http://site.internal.bm.com/config/get-config-data
      */
     public function actionGetConfigData()
     {
