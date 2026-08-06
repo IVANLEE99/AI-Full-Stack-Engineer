@@ -17,6 +17,10 @@
 
 > `PayRequest`、`OrderRequest` 这类 HTTP 客户端封装，可以类比 `axios.create({ baseURL })`：先固定目标服务地址，再用不同方法拼接 path 和参数，最终把网关请求转发给内网服务。
 
+**延伸阅读**：
+- [final class 用法说明](./final-class说明.md)（Day 02 伪代码中 `PayRequest`、`PayController` 为何使用 `final class`）
+- [day02-源码阅读笔记](./day02-源码阅读笔记.md)（基于 `PayRequest` / `OrderRequest` 的结构拆解与风险清单）
+
 ---
 
 ## 0. 今日学习路线
@@ -116,6 +120,8 @@ final class PayRequest
     }
 }
 ```
+
+> 这里的 `final class` 表示禁止继承，保证 Request 类职责固定。详见 [final class 用法说明](./final-class说明.md)。
 
 ---
 
@@ -433,6 +439,8 @@ baseURL 来源：
 - [ ] Controller → Request → 内网服务调用图
 - [ ] HTTP 封装能力清单
 - [ ] AI Review 记录
+
+参考产出：[`day02-源码阅读笔记.md`](./day02-源码阅读笔记.md)
 
 ---
 

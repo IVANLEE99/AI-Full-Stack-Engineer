@@ -44,6 +44,13 @@
 
 > 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
 
+### 专题补充文档
+
+| 文档 | 说明 |
+|---|---|
+| [final-class说明.md](./final-class说明.md) | `final class` 语法、适用场景与 Week 05 示例 |
+| [day02-源码阅读笔记.md](./day02-源码阅读笔记.md) | `PayRequest` / `OrderRequest` 源码拆解、对比与复盘题 |
+
 ---
 
 ## 4. 七天详细学习安排
@@ -100,6 +107,8 @@
 **学习内容**：
 - 阅读 Yii2 HTTP Client 基础
 - 阅读 Laravel HTTP Client 作对照
+- 阅读 [final class 用法说明](./final-class说明.md)
+- 阅读 [day02-源码阅读笔记](./day02-源码阅读笔记.md)
 
 **源码阅读**：
 - `mall-gateway/services/http/PayRequest.php`
