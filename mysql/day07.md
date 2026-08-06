@@ -158,6 +158,8 @@ mysql -u root -p shop_lab_restore < shop_lab_bak.sql
 
 全局 ID：号段、雪花、UUID（注意主键无序对 InnoDB 的影响）等。
 
+**延伸阅读：** [production-ha-sharding-guide.md](./production-ha-sharding-guide.md)（备份 RPO/RTO、主从延迟、读写分离一致性、分片决策树 · 对齐 mysql-pro）
+
 ---
 
 ## 6. 安全迁移（expand / contract）
