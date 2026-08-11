@@ -50,6 +50,7 @@
 |---|---|
 | [final-class说明.md](./final-class说明.md) | `final class` 语法、适用场景与 Week 05 示例 |
 | [day02-源码阅读笔记.md](./day02-源码阅读笔记.md) | `PayRequest` / `OrderRequest` 源码拆解、对比与复盘题 |
+| [day03-源码阅读笔记.md](./day03-源码阅读笔记.md) | `PayController` 薄 Controller 行数统计、职责拆分与复盘题 |
 
 ---
 
@@ -144,6 +145,7 @@
 **学习内容**：
 - 复习 Module 路由
 - 找一个 PayController action 逐行分析
+- 阅读 [day03-源码阅读笔记](./day03-源码阅读笔记.md)
 
 **源码阅读**：
 - `mall-gateway/frontapi/modules/Pay/controllers/PayController.php`
