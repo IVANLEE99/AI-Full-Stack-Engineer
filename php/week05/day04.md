@@ -17,6 +17,8 @@
 
 > 反查链路就是从浏览器或前端代码里的 URL 开始，沿着路由、Controller、Filter/鉴权、公参注入、Request 客户端一路追到内网服务，最终知道“这个接口到底经过了哪些层”。
 
+**延伸阅读**：[day04-源码阅读笔记](./day04-源码阅读笔记.md)（基于 `AuthApiController` 的白名单、Filter 挂载与 `pay/pay/methods` 反查纠正）
+
 ---
 
 ## 0. 今日学习路线
@@ -297,6 +299,10 @@ BFF 鉴权和链路反查里常见风险：
 | 公参如何传给下游 |  |
 | Filter/behavior 在哪里配置 |  |
 
+已完成参考：[day04-源码阅读笔记.md](./day04-源码阅读笔记.md)
+
+> 源码纠正：`pay/pay/methods` 在 `$freeLoginAuthApiList` 中，实际**免登录**，但仍走 `VerifySignatureFilter`。
+
 ---
 
 ## 3. 练习任务
@@ -370,6 +376,8 @@ action：
 - [ ] 鉴权与白名单标注表
 - [ ] 公参注入笔记
 - [ ] AI Review 记录
+
+参考产出：[`day04-源码阅读笔记.md`](./day04-源码阅读笔记.md)
 
 ---
 

@@ -51,6 +51,7 @@
 | [final-class说明.md](./final-class说明.md) | `final class` 语法、适用场景与 Week 05 示例 |
 | [day02-源码阅读笔记.md](./day02-源码阅读笔记.md) | `PayRequest` / `OrderRequest` 源码拆解、对比与复盘题 |
 | [day03-源码阅读笔记.md](./day03-源码阅读笔记.md) | `PayController` 薄 Controller 行数统计、职责拆分与复盘题 |
+| [day04-源码阅读笔记.md](./day04-源码阅读笔记.md) | `AuthApiController` 白名单、Filter 与 `pay/pay/methods` 反查 |
 
 ---
 
@@ -180,6 +181,7 @@
 **学习内容**：
 - 阅读 AuthApiController 中 token 与公参注入
 - 从 mall-pc 找一个支付 API
+- 阅读 [day04-源码阅读笔记](./day04-源码阅读笔记.md)
 
 **源码阅读**：
 - `mall-gateway/frontapi/modules/AuthApiController.php`
