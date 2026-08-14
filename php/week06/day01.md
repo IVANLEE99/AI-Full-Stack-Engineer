@@ -17,7 +17,7 @@
 
 > `OrderController` 是订单域的 HTTP 入口，它不应该承载复杂订单规则，而应该负责“接请求、校验入口、调用订单服务、统一返回结果”。
 
-**延伸阅读**：[day01-源码阅读笔记](./day01-源码阅读笔记.md)（基于网关 `OrderController` 的结构拆解；注意课程路径与本地映射差异）
+**延伸阅读**：[day01-源码阅读笔记](./day01-源码阅读笔记.md)（基于 **order-api** `OrderController`：Form、锁、`TradePlace` 主链路；`TradeConfirm` 已关闭）
 
 ---
 
@@ -246,7 +246,7 @@ Controller 里直接查商品、算价格、扣库存、创建订单、改状态
 
 已完成参考：[day01-源码阅读笔记.md](./day01-源码阅读笔记.md)
 
-> 源码纠正：本地映射是 BFF `OrderController`，没有 Form / `OrderService`；`actionConfirm` / `actionPlace` 已 `Abandoned`。
+> 源码纠正：本地文件已是 **order-api** `AppOrderApi\controllers\OrderController`（约 1699 行）。现行下单是 `actionTradePlace`；`actionTradeConfirm` 直接 `forbidden`。
 
 ---
 

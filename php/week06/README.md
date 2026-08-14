@@ -47,7 +47,7 @@
 
 | 文档 | 说明 |
 |---|---|
-| [day01-源码阅读笔记.md](./day01-源码阅读笔记.md) | 网关 `OrderController` 结构、废弃下单入口与薄度判断 |
+| [day01-源码阅读笔记.md](./day01-源码阅读笔记.md) | order-api `OrderController`：Form、锁、`TradePlace` 与过厚 action |
 
 ---
 
