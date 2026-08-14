@@ -17,6 +17,8 @@
 
 > `OrderController` 是订单域的 HTTP 入口，它不应该承载复杂订单规则，而应该负责“接请求、校验入口、调用订单服务、统一返回结果”。
 
+**延伸阅读**：[day01-源码阅读笔记](./day01-源码阅读笔记.md)（基于网关 `OrderController` 的结构拆解；注意课程路径与本地映射差异）
+
 ---
 
 ## 0. 今日学习路线
@@ -242,6 +244,10 @@ Controller 里直接查商品、算价格、扣库存、创建订单、改状态
 |  |  |  |  |  |  |
 |  |  |  |  |  |  |
 
+已完成参考：[day01-源码阅读笔记.md](./day01-源码阅读笔记.md)
+
+> 源码纠正：本地映射是 BFF `OrderController`，没有 Form / `OrderService`；`actionConfirm` / `actionPlace` 已 `Abandoned`。
+
 ---
 
 ## 3. 练习任务
@@ -310,6 +316,8 @@ Service 方法：
 - [ ] 入参/出参/错误码记录
 - [ ] action 是否过厚的判断表
 - [ ] AI Review 记录
+
+参考产出：[`day01-源码阅读笔记.md`](./day01-源码阅读笔记.md)
 
 ---
 

@@ -43,6 +43,12 @@
 
 > 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
 
+### 专题补充文档
+
+| 文档 | 说明 |
+|---|---|
+| [day01-源码阅读笔记.md](./day01-源码阅读笔记.md) | 网关 `OrderController` 结构、废弃下单入口与薄度判断 |
+
 ---
 
 ## 4. 七天详细学习安排
@@ -65,6 +71,7 @@
 **学习内容**：
 - 复习 Yii2 Controller 与 try/catch 模式
 - 理解 endSuccess/endFail
+- 阅读 [day01-源码阅读笔记](./day01-源码阅读笔记.md)
 
 **源码阅读**：
 - `order-api/controllers/OrderController.php`
