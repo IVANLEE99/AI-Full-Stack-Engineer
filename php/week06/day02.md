@@ -17,6 +17,8 @@
 
 > `OrderService` 是订单业务的编排中心：Controller 只负责入口，Repository/Model 只负责数据，而订单创建、确认、状态判断、返回结构组织通常应该由 Service 来承接。
 
+**延伸阅读**：[day02-源码阅读笔记](./day02-源码阅读笔记.md)（Context + Node 链、`code==1`、与 `PlaceOrderService` 分工）
+
 ---
 
 ## 0. 今日学习路线
@@ -263,6 +265,10 @@ final class OrderService
 |  |  |  |  |  |
 |  |  |  |  |  |
 
+已完成参考：[day02-源码阅读笔记.md](./day02-源码阅读笔记.md)
+
+> 源码纠正：成功码是 **`code == 1`**；建单在 `PlaceOrderService::tradePlace`，不在本类。
+
 ---
 
 ## 3. 练习任务
@@ -328,6 +334,8 @@ Order Model / DB
 - [ ] Service → Repository 调用关系图
 - [ ] `code/data/info` 返回格式理解笔记
 - [ ] AI Review 记录
+
+参考产出：[`day02-源码阅读笔记.md`](./day02-源码阅读笔记.md)
 
 ---
 

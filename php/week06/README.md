@@ -48,6 +48,9 @@
 | 文档 | 说明 |
 |---|---|
 | [day01-源码阅读笔记.md](./day01-源码阅读笔记.md) | order-api `OrderController`：Form、锁、`TradePlace` 与过厚 action |
+| [day02-源码阅读笔记.md](./day02-源码阅读笔记.md) | `OrderService`：Context/Node 链、`code==1`、与 PlaceOrder 分工 |
+| [yii2-rules说明.md](./yii2-rules说明.md) | Yii2 `rules()` 结构、校验器与真实 Form 差异 |
+| [day03-源码阅读笔记.md](./day03-源码阅读笔记.md) | `OrderConfirmForm` 场景方法、字段对照与 Form/Service 边界 |
 
 ---
 
@@ -104,6 +107,7 @@
 **学习内容**：
 - 阅读 Service 层设计规范
 - 理解 ['code','data','info'] 返回格式
+- 阅读 [day02-源码阅读笔记](./day02-源码阅读笔记.md)
 
 **源码阅读**：
 - `mall-core/common/services/order/OrderService.php`
@@ -136,6 +140,7 @@
 **学习内容**：
 - 复习 Yii2 Form rules/scenarios
 - 打开 mall-pc 结账页
+- 阅读 [day03-源码阅读笔记](./day03-源码阅读笔记.md)
 
 **源码阅读**：
 - `order-api/forms/OrderConfirmForm.php`

@@ -17,6 +17,10 @@
 
 > Form 校验是订单接口的第一道后端防线：前端可以提示用户，后端必须最终确认参数完整、类型正确、场景匹配，并把错误以统一格式返回给前端。
 
+**延伸阅读**：
+- [Yii2 rules() 写法说明](./yii2-rules说明.md)
+- [day03-源码阅读笔记](./day03-源码阅读笔记.md)（真实 Form 的 `$ruleArray` 场景、字段对照与 Form/Service 边界）
+
 ---
 
 ## 0. 今日学习路线
@@ -123,6 +127,8 @@ public function rules(): array
 | `integer` | 必须是整数 |
 | `compare >= 1` | 数量不能小于 1 |
 | `string max 255` | 字符串长度限制 |
+
+详细拆解：[yii2-rules说明.md](./yii2-rules说明.md)
 
 ---
 
@@ -286,6 +292,10 @@ $form->validate();
 |  |  |  |  |  |  |  |
 |  |  |  |  |  |  |  |
 
+已完成参考：[day03-源码阅读笔记.md](./day03-源码阅读笔记.md)
+
+> 源码纠正：无 `scenarios()`；用 `*Validate` + `$ruleArray`。商品字段是 `goods_list`，备注是 `commit`。
+
 ---
 
 ## 3. 练习任务
@@ -346,6 +356,8 @@ scenarios：
 - [ ] 必填/类型/错误提示表
 - [ ] Form 校验 vs Service 业务校验边界表
 - [ ] AI Review 记录
+
+参考产出：[`day03-源码阅读笔记.md`](./day03-源码阅读笔记.md)
 
 ---
 
