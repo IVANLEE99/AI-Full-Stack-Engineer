@@ -125,6 +125,101 @@ docker run -d --name redis \
   redis:7-alpine
 ```
 
+两条都是 **`docker run`：用镜像起一个 Redis 容器**。差别只在「试跑」还是「常驻」。
+
+`docker run` 在干什么：
+
+1. 本地没有 `redis:7-alpine` 就去 Docker Hub 拉
+2. 用这个镜像创建一个容器（隔离的小 Linux 环境）
+3. 容器里默认启动 Redis，监听 **容器内部** 的 `6379`
+
+你的电脑要连它，必须再做端口映射，这就是 `-p`。
+
+#### 第一条：前台试跑
+
+```bash
+docker run --rm -p 6379:6379 redis:7-alpine
+```
+
+| 片段 | 含义 |
+|------|------|
+| `docker run` | 创建并启动一个容器 |
+| `--rm` | 容器一停就删掉自己，不留垃圾容器 |
+| `-p 6379:6379` | 把本机 `6379` 转到容器里的 `6379`（写法是 `本机端口:容器端口`） |
+| `redis:7-alpine` | 镜像 `名字:标签`。`7` 是 Redis 7.x，`alpine` 是小体积 Linux 基础镜像 |
+
+这条**不加 `-d`**，Redis 日志打在当前终端。`Ctrl+C` 会停掉 Redis；因为有 `--rm`，容器也会被删掉。适合确认「Docker 能不能把 Redis 跑起来」。
+
+```text
+你的电脑 127.0.0.1:6379  ──映射──►  容器内 Redis :6379
+```
+
+本机 6379 已被占用（例如 Homebrew 装过 Redis）会报 `port is already allocated`。可改成 `-p 6380:6379`，然后 `redis-cli -p 6380`。
+
+#### 第二条：后台常驻 + 数据落盘
+
+```bash
+docker run -d --name redis \
+  -p 6379:6379 \
+  -v redis-data:/data \
+  redis:7-alpine
+```
+
+`\` 只是换行，和写成一行效果相同。
+
+| 片段 | 含义 |
+|------|------|
+| `-d` | detached，后台跑，终端还能继续用 |
+| `--name redis` | 容器名叫 `redis`。后面才能 `docker exec -it redis redis-cli`、`docker stop redis` |
+| `-p 6379:6379` | 同上，本机 6379 → 容器 6379 |
+| `-v redis-data:/data` | 把 Docker **命名卷** `redis-data` 挂到容器里的 `/data` |
+| `redis:7-alpine` | 同一个镜像 |
+
+官方 Redis 镜像默认把 RDB/AOF 写在容器内 `/data`。不挂卷的话，`docker rm` 删容器，数据一起没。挂上之后：
+
+```text
+容器 /data  ──持久化──►  Docker 管的卷 redis-data
+（卷在 Docker 自己的目录里，不在你的项目文件夹）
+```
+
+卷不存在会自动创建：
+
+```bash
+docker volume ls
+docker volume inspect redis-data
+```
+
+没有 `--rm`：停掉后容器还在，可以 `docker start redis` 再起来。
+
+#### 两条怎么选
+
+| | 试跑 | 学习常用 |
+|--|------|----------|
+| 命令 | `--rm` 前台 | `-d --name redis -v ...` |
+| 关终端 | 进程停、容器删 | Redis 继续跑 |
+| 数据 | 随容器消失 | 在 `redis-data` 卷里 |
+| 再启动 | 再 `docker run` 一次 | `docker start redis` |
+
+学习阶段用第二条即可。第一条还在跑时，第二条会因为 **端口 6379 被占** 或 **名字 `redis` 已存在** 失败。先停掉旧的：
+
+```bash
+docker stop redis && docker rm redis
+# 如果是第一条前台跑的，在那个终端 Ctrl+C 即可
+```
+
+#### 日常配套命令
+
+```bash
+docker ps                    # 正在跑的容器，应看到 redis、端口 0.0.0.0:6379->6379
+docker logs redis            # 看 Redis 启动日志
+docker stop redis            # 停
+docker start redis           # 再开（容器还在）
+docker rm redis              # 删容器（-v 的卷默认还在，数据还在）
+docker volume rm redis-data  # 连数据一起清掉
+```
+
+镜像名拆开：**仓库名 `redis` + 标签 `7-alpine`**。不写标签默认 `latest`。学习里钉死 `7-alpine`，避免每次拉到不同版本。
+
 docker-compose 备选：
 
 ```yaml
@@ -143,17 +238,31 @@ volumes:
 docker compose up -d
 ```
 
+这是第二条 `docker run` 的 YAML 写法：`image` / `ports` / `volumes` 一一对应镜像、`-p`、`-v`。`docker compose up -d` 的 `-d` 同样是后台跑。
+
 进容器里的客户端：
 
 ```bash
 docker exec -it redis redis-cli
 ```
 
-本机已装 `redis-cli` 时直接：
+| 片段 | 含义 |
+|------|------|
+| `docker exec` | 在**已经在跑**的容器里再执行一条命令 |
+| `-i` | 保持标准输入，这样才能打字 |
+| `-t` | 分配伪终端，交互更好用 |
+| `redis` | `--name` 起的那个名字 |
+| `redis-cli` | 容器里 Redis 自带的客户端 |
+
+顺序：先 `docker run ... --name redis`（或 compose）把服务拉起来，再 `exec` 进去敲 `PING`。
+
+本机已装 `redis-cli` 时不必进容器：
 
 ```bash
 redis-cli -h 127.0.0.1 -p 6379
 ```
+
+连的是 `-p` 映射出来的端口，和进容器里连 `localhost:6379` 是同一台 Redis。
 
 ### 2.2 macOS Homebrew
 
