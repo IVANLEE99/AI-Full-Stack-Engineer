@@ -39,6 +39,7 @@ class AuthApiController extends BaseApiController
         'pay/payment-request/success',//发付请支付成功
         'pay/pay/update-order-success',//空中云汇 支付成功，更新支付单
         'order/confirm/new-info',
+        'order/pay/create-payment-intent',
         'order/order-v3/detail',
         'order/order/get-order-service-guarantee',
         'order/order/get-order-recommend-goods',
@@ -85,6 +86,7 @@ class AuthApiController extends BaseApiController
         // 新登录注册
         'user/code/login',
         'user/code/verify',
+        'user/code/register',
         // 换货页推荐链接
         'order/after-sale/get-replacement-product-list',
         'order/after-sale/get-recommend-replacement-product-list',
@@ -92,12 +94,16 @@ class AuthApiController extends BaseApiController
         'order/after-sale/calculate-exchange-goods-amount',
         // 放权路由
         'order/order/get-invoice',
+        'order/order/get-invoice-list',
         'order/order/get-info-security',
         'order/delivery-or-pick-up/cart-list',
         // 退货退款
         'order/after-sale/get-return-sticker-data',
         'order/after-sale/download-pdf',
         'order/invite-comments/verify',
+        'order/invite-comments/target-review-verify',
+        'order/invite-comments/target-review-submit',
+        'order/invite-comments/reward-rule',
         'order/feedback/refer',
         'order/feedback/get-list',
         //获取优先
@@ -114,6 +120,8 @@ class AuthApiController extends BaseApiController
         //门店
         'store/store/store-user-authorize',
         'store/store/store-promotion-authorize',
+        'store/store/store-cash-payment-authorize',
+        'store/store/clearance-price-authorize',
         'order/order/get-order-info',
         //impact不需要登录校验
         'order/impact/convert',
