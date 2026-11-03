@@ -222,19 +222,37 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), (req, res
 - `pay-service/pay-api/controllers/outer/StripeController.php`
 
 > 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
+> 本仓库快照：[StripeController.php](./StripeController.php)。下文行号均指这份快照。
 
 阅读记录：
 
 | 阅读点 | 记录 |
 |---|---|
-| Webhook action |  |
-| raw body 获取方式 |  |
-| signature header 名称 |  |
-| webhook secret 来源 |  |
-| 验签方法 |  |
-| event type 分发 |  |
-| 幂等处理 |  |
-| 是否投递 MQ |  |
+| Webhook action | `actionWebhook()`，[L28-47](./StripeController.php#L28-L47)。入口只做三件事：取参数 → 调 Service → 按 `code` 返回 `endSuccess` / `endFail`；异常统一 `g_log_error` 后 `endFail` |
+| raw body 获取方式 | **快照中未实现**。L30 直接 `$params = \Yii::$app->request->post()`，走的是 Yii 已解析的表单/JSON 参数，不是原始字节 |
+| signature header 名称 | **快照中未出现**。全文件没有 `Stripe-Signature`，也没有任何 header 读取（`grep` 零命中） |
+| webhook secret 来源 | **快照中未出现**。没有 secret 配置、没有 SDK 初始化 |
+| 验签方法 | **快照中未实现**。没有 `constructEvent`、没有 `Webhook::constructEvent`，也没有 `VerifySignatureFilter` 之类的 behavior。父类 `BaseWebController` 只处理 `pf/site/language` 等公共参数（见 [03-mall-core-internal.md](../03-mall-core-internal.md) §5.4），不含 Stripe 签名校验 |
+| event type 分发 | L33 取 `$params['type']`，原样传给 `PaymentWebhookService::paymentWebhookHandle(PaymentRepository::PAY_BY_STRIPR, $params['type'], $params)`。**事件名 → 内部方法**的映射不在这里，按 [04-pay-service.md](../04-pay-service.md#L820-L844) 在 `WebhookEventMappingNode`（如 `payment_intent.succeeded → paymentCompletedHandle`） |
+| 幂等处理 | **Controller 层无幂等**。没有 event_id 校验、没有 Redis `SETNX`、没有 processed_events 表。按 [04-pay-service.md](../04-pay-service.md#L890) 下游 `PaymentSuccessNotifyNode` 会「先检查支付单是否已经支付，避免重复通知」 |
+| 是否投递 MQ | **Controller 不直接投递**。它只调 `paymentWebhookHandle`；真正更新与通知在 `PaymentSuccessService::updatePaymentSuccess()`，MQ 配置为 `payment_paid_notify_mq`、`order_pay_success_delay_mq` 等（见 [04-pay-service.md](../04-pay-service.md#L1158-L1176)） |
+
+读完必须先建立的**风险认知**（这是本日最重要的一条）：
+
+> 这份 `StripeController` 是一个**薄分发层**：它不验签、不取 raw body、不做幂等，直接把 `$params['type']` 当成可信事件类型往下传。
+>
+> 因此验签若存在，只可能在两处，**且都不在快照里**：
+> 1. 父类 `BaseWebController` / 全局 behavior（快照未包含）；
+> 2. `PaymentWebhookService::paymentWebhookHandle()`（仓库无源码快照）。
+>
+> 学习时**不要**把 day02 前半部分讲的「raw body + Stripe-Signature + constructEvent」当成这个 controller 的现状。那是 Stripe 的标准做法与「应该怎么写」，不是这份代码「已经怎么写」。真实项目里要确认验签在哪一层，**在没读到实现之前，不能假定它存在**——这正好是 [04-pay-service.md](../04-pay-service.md#L916-L928) §9.4 强调的「仓库各渠道验签实现并不完全一致，修改前必须阅读该渠道 Controller、Webhook Service 和底层 SDK 调用」。
+
+另外两个容易读漏的细节：
+
+1. **常量名拼写是 `PAY_BY_STRIPR`**（少一个 E），不是笔误可以随手改的地方——它是 `PaymentRepository` 里真实存在的常量名，改错会直接报未定义常量。
+2. **`actionConfirmCallback()` 是另一条链路**（3DS），[L52-82](./StripeController.php#L52-L82)。它同样用 `request->post()`、同样没验签，靠 `payment_intent` + `payment_intent_client_secret` 查支付参数，结果写 `PaymentRedis::setPayStatus()` 给前端轮询。它和 `actionWebhook` 是**两个入口，不要混为一谈**。
+
+> 后续动作：拿到 `PaymentWebhookService` / `StripeWebhookService` 源码后，把验签结论补进本表，再勾选「今日完成标准」。
 
 ---
 
