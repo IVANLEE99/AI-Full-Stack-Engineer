@@ -137,6 +137,8 @@ RabbitMQ
 更新订单状态 / 发通知 / 发权益 / 写审计日志
 ```
 
+> ⚠️ 上面的「验签 → 幂等 → 校验 → 投 MQ」是**目标链路图**，不是 `outer/StripeController` 这个类当前做的事。按 [day02 源码阅读](./day02.md#2-源码阅读)的实测：该 controller 只做 `post()` 取参 → `paymentWebhookHandle()` → 返回，不读 raw body、不读 `Stripe-Signature`、无幂等、不投 MQ（`MqService` 仅 import 未使用）。验签与幂等若存在，在 `PaymentWebhookService` 及下游——那些类没有源码快照。画图时请把这几步归属到下游，不要记在 controller 头上。
+
 Webhook 快速返回是关键：不要在回调里同步做所有耗时动作。
 
 ---

@@ -229,30 +229,66 @@ app.post('/webhook/stripe', express.raw({ type: 'application/json' }), (req, res
 | 阅读点 | 记录 |
 |---|---|
 | Webhook action | `actionWebhook()`，[L28-47](./StripeController.php#L28-L47)。入口只做三件事：取参数 → 调 Service → 按 `code` 返回 `endSuccess` / `endFail`；异常统一 `g_log_error` 后 `endFail` |
-| raw body 获取方式 | **快照中未实现**。L30 直接 `$params = \Yii::$app->request->post()`，走的是 Yii 已解析的表单/JSON 参数，不是原始字节 |
+| raw body 获取方式 | **快照中未实现**。L30 直接 `$params = \Yii::$app->request->post()`。pay-api 配置注册了 `'application/json' => 'yii\web\JsonParser'`，所以 `post()` 返回的是**从 body 解析出的 JSON 字段数组**，不是原始字节流；验签需要对原始字节做 HMAC，解析后的数组用不了 |
 | signature header 名称 | **快照中未出现**。全文件没有 `Stripe-Signature`，也没有任何 header 读取（`grep` 零命中） |
 | webhook secret 来源 | **快照中未出现**。没有 secret 配置、没有 SDK 初始化 |
-| 验签方法 | **快照中未实现**。没有 `constructEvent`、没有 `Webhook::constructEvent`，也没有 `VerifySignatureFilter` 之类的 behavior。父类 `BaseWebController` 只处理 `pf/site/language` 等公共参数（见 [03-mall-core-internal.md](../03-mall-core-internal.md) §5.4），不含 Stripe 签名校验 |
-| event type 分发 | L33 取 `$params['type']`，原样传给 `PaymentWebhookService::paymentWebhookHandle(PaymentRepository::PAY_BY_STRIPR, $params['type'], $params)`。**事件名 → 内部方法**的映射不在这里，按 [04-pay-service.md](../04-pay-service.md#L820-L844) 在 `WebhookEventMappingNode`（如 `payment_intent.succeeded → paymentCompletedHandle`） |
-| 幂等处理 | **Controller 层无幂等**。没有 event_id 校验、没有 Redis `SETNX`、没有 processed_events 表。按 [04-pay-service.md](../04-pay-service.md#L890) 下游 `PaymentSuccessNotifyNode` 会「先检查支付单是否已经支付，避免重复通知」 |
-| 是否投递 MQ | **Controller 不直接投递**。它只调 `paymentWebhookHandle`；真正更新与通知在 `PaymentSuccessService::updatePaymentSuccess()`，MQ 配置为 `payment_paid_notify_mq`、`order_pay_success_delay_mq` 等（见 [04-pay-service.md](../04-pay-service.md#L1158-L1176)） |
+| 验签方法 | **快照中未实现**。没有 `constructEvent`、没有 `Webhook::constructEvent`，也没有 `behaviors()` / `beforeAction()` 注入校验。父类 `common\BaseWebController`（**pay-service 仓库**，190 行）已核实：只做 `pf` / `language` / `site` 与 AB 实验初始化，无 `behaviors()`、无 Filter。应用配置 `baomi-pay-api/config/main.php` 已核实：全局只有 `as corsFilter`（`yii\filters\Cors`），**无签名 Filter** |
+| event type 分发 | L33 取 `$params['type']`，原样传给 `PaymentWebhookService::paymentWebhookHandle(PaymentRepository::PAY_BY_STRIPR, $params['type'], $params)`。注意 L33 **没有任何 `isset` / `empty` 校验**（对比同文件 L57 的 3DS 链路先校验再取），缺 key 会告警并把 `null` 传下去。按 [04-pay-service.md](../04-pay-service.md#L820-L844) §9.1：映射表维护在 `PaymentWebhookService::$eventList`，**执行**映射的是 `WebhookEventMappingNode`（如 `payment_intent.succeeded → paymentCompletedHandle`）。两者均无源码快照 |
+| 幂等处理 | **Controller 层无幂等**：无 event_id 校验、无 Redis `SETNX`、无 processed_events 表。下游只有**已支付短路**——`PaymentSuccessNotifyNode` 会「先检查支付单是否已经支付，避免重复通知」（[04-pay-service.md](../04-pay-service.md#L890)）。这**不等于 event-id 幂等**：文档把「Webhook 幂等键 = 渠道 event ID」列为推荐做法（§13.2）、把「实现签名验证和 event ID 幂等」列为待办（§14.2），并把 Webhook 表唯一索引列为待确认项（§19）。所以准确表述是：**下游有已支付短路；事件级幂等是否存在，无法从仓库确认** |
+| 是否投递 MQ | **Controller 不直接投递**。它 `import` 了 `MqService`（L16）却**全文未调用**，也没有 `RabbitMq::send`。真正更新在 `PaymentSuccessService::updatePaymentSuccess()`（[04-pay-service.md](../04-pay-service.md#L893)）。MQ 侧：`payment_paid_notify_mq`、`order_pay_success_delay_mq` 是 §12.3 列出的**服务级配置清单**（[L1174](../04-pay-service.md#L1174)），文档并未证明 `updatePaymentSuccess()` 会发布到该队列——**这条链路是推断，不是仓库事实** |
 
 读完必须先建立的**风险认知**（这是本日最重要的一条）：
 
 > 这份 `StripeController` 是一个**薄分发层**：它不验签、不取 raw body、不做幂等，直接把 `$params['type']` 当成可信事件类型往下传。
 >
-> 因此验签若存在，只可能在两处，**且都不在快照里**：
-> 1. 父类 `BaseWebController` / 全局 behavior（快照未包含）；
-> 2. `PaymentWebhookService::paymentWebhookHandle()`（仓库无源码快照）。
+> 已核实的边界：
+> 1. 快照与真实仓库文件 `baomi-pay-api/controllers/outer/StripeController.php` **逐行一致**（L28-47 已对读）；
+> 2. 父类 `common\BaseWebController`（pay-service 仓库，190 行）**已读全文，确认不验签**——只做 `pf` / `language` / `site` 与 AB 实验初始化，没有 `behaviors()`、没有 Filter；
+> 3. 应用配置 `baomi-pay-api/config/main.php` **已读全文**：全局只注册了 `as corsFilter`（`yii\filters\Cors`），**没有签名 Filter**；
+> 4. 因此唯一可能的验签位置只剩 `PaymentWebhookService::paymentWebhookHandle()` 及其下游，而这个类在仓库里**没有源码快照**。
+>
+> 注意区分两个同名文件：`03-mall-core-internal.md` §5.4 描述的是 **mall-core** 的 `BaseWebController`，与 pay-service 的 `common\BaseWebController` **不是同一个文件**，不能互相当证据。
 >
 > 学习时**不要**把 day02 前半部分讲的「raw body + Stripe-Signature + constructEvent」当成这个 controller 的现状。那是 Stripe 的标准做法与「应该怎么写」，不是这份代码「已经怎么写」。真实项目里要确认验签在哪一层，**在没读到实现之前，不能假定它存在**——这正好是 [04-pay-service.md](../04-pay-service.md#L916-L928) §9.4 强调的「仓库各渠道验签实现并不完全一致，修改前必须阅读该渠道 Controller、Webhook Service 和底层 SDK 调用」。
 
-另外两个容易读漏的细节：
+另外几个容易读漏的细节：
 
 1. **常量名拼写是 `PAY_BY_STRIPR`**（少一个 E），不是笔误可以随手改的地方——它是 `PaymentRepository` 里真实存在的常量名，改错会直接报未定义常量。
 2. **`actionConfirmCallback()` 是另一条链路**（3DS），[L52-82](./StripeController.php#L52-L82)。它同样用 `request->post()`、同样没验签，靠 `payment_intent` + `payment_intent_client_secret` 查支付参数，结果写 `PaymentRedis::setPayStatus()` 给前端轮询。它和 `actionWebhook` 是**两个入口，不要混为一谈**。
+3. **`MqService` 在 L16 被 import，但全文没有用到**。看到这个 import 就以为 Webhook 会投 MQ，是常见的误读；MQ 投递发生在下游 Service。
+4. **`$params['payment_intent_client_secret']` 里的 “secret” 不是 webhook secret**。那是 Stripe 3DS 的 PaymentIntent client secret，和验签密钥是两回事；全文没有出现 webhook signing secret。
 
 > 后续动作：拿到 `PaymentWebhookService` / `StripeWebhookService` 源码后，把验签结论补进本表，再勾选「今日完成标准」。
+
+### 同名但不同层：网关侧的 `Outer\StripeController`
+
+`pay-service` 之外，**网关仓库里还有一个同名控制器**，命名空间是 `fecshop\app\frontapi\modules\Outer\controllers`，只做转发：
+
+```php
+public function actionWebhook()
+{
+    $params  = \Yii::$app->request->post();
+    $headers = $this->getAllHeaders();          // ← 这里读了 header
+    $result  = NewPayRequest::instance()->stripeWebhook($params, $headers);
+    $this->endJson($result['code'], null, $result['info']);
+}
+```
+
+对比两条链路，差异正好解释了「为什么在 pay-service 里搜不到验签」：
+
+| | 网关 `Outer\StripeController` | 支付服务 `outer\StripeController` |
+|---|---|---|
+| 原始 body | `post()`，不取 raw | `post()`，不取 raw |
+| header | **`getAllHeaders()` 取全部 header** | 完全不读 header |
+| 下游 | `NewPayRequest::stripeWebhook($params, $headers)` | `PaymentWebhookService::paymentWebhookHandle(...)` |
+| 验签位置 | 在 `NewPayRequest`（网关侧 HTTP 客户端，仓库无源码） | 在 `PaymentWebhookService` 或更下层（仓库无源码） |
+
+两个容易踩的判断：
+
+1. **网关 `BaseController::behaviors()` 里挂着 `VerifySignatureFilter`**（见 [02-mall-gateway-fecshop.md](../02-mall-gateway-fecshop.md) §6.2–6.3），但那个校验的是内部调用方的 `__s__` 参数签名，**不是 Stripe 的 `Stripe-Signature`**。两套签名不能混为一谈，看到「有验签 Filter」不等于 Webhook 已验证来源。
+2. 网关侧虽然读了全部 header，但它**没有自己验签**，只是把 header 透传给 `NewPayRequest`。所以即使 header 里有 `Stripe-Signature`，结论仍要落到 `NewPayRequest::stripeWebhook` 的实现上。
+
+> 因此本表填写的是**支付服务侧**控制器。网关侧这个同名类是「验签可能在谁手里」的线索，不是答案本身。
 
 ---
 
