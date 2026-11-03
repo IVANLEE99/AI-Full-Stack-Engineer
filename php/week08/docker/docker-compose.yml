@@ -1,0 +1,68 @@
+# day04 学习环境：一次启动 PHP + MySQL + Redis + RabbitMQ
+#
+# 关键点（对应 day04 六条标准）：
+#   1. 每个服务有自己的「服务名」，容器之间用服务名互访，不用 127.0.0.1
+#   2. ports 是「本机端口:容器端口」，只有这样才能从 Mac 上访问
+#   3. volumes 把本机代码挂进容器，改文件不用重建镜像
+name: learn-env
+
+services:
+  php:
+    build: .
+    container_name: learn-php
+    volumes:
+      - ..:/app
+    environment:
+      # 注意：这里写的是服务名 mysql / redis / rabbitmq，不是 127.0.0.1
+      DB_HOST: mysql
+      DB_PORT: 3306
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - learn
+
+  mysql:
+    image: mysql:8.0
+    container_name: learn-mysql
+    ports:
+      - "3307:3306"          # 本机 3307，避免和你本机 MySQL 的 3306 冲突
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: learn
+    volumes:
+      - mysql-data:/var/lib/mysql
+    networks:
+      - learn
+
+  redis:
+    image: redis:7-alpine
+    container_name: learn-redis
+    ports:
+      - "6380:6379"          # 本机 6380，避免和已有 redis 冲突
+    networks:
+      - learn
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: learn-rabbitmq
+    ports:
+      - "5673:5672"          # AMQP 协议端口
+      - "15673:15672"        # 管理界面
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin123
+    networks:
+      - learn
+
+volumes:
+  mysql-data:
+
+networks:
+  learn:
+    driver: bridge
