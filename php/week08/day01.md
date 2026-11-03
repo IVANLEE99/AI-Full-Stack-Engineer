@@ -241,17 +241,25 @@ await queue.add('payment.succeeded', {
 - `mall-core/common/libraries/App/Utils/RabbitMq.php`
 
 > 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
+> 本仓库快照：[RabbitMq.php](./RabbitMq.php)；真实调用方：[OrderService.php](../week06/OriginCodes/OrderService.php)。
 
 阅读记录：
 
 | 阅读点 | 记录 |
 |---|---|
-| send 方法参数 |  |
-| exchange 从哪里来 |  |
-| route_key 从哪里来 |  |
-| message 如何序列化 |  |
-| 失败是否记录日志 |  |
-| 是否支持重试 |  |
+| send 方法参数 | `send($exchangeName, $routeKey, $msg, $delaySeconds = 0, $isFormatMsg = true)`。exchange / routeKey 为字符串，msg 可为字符串或数组，delay 单位是**秒**（内部 ×1000 转毫秒），isFormatMsg 控制是否追加 header 与 IP |
+| exchange 从哪里来 | 调用方传入。真实调用方从 `\Yii::$app->params['order_change_mq']['exchange_name']` 一类配置读取；`sendCommonMq` 在 `$delaySeconds > 0` 时改用 `public_delay_mq`，否则用 `public_direct_mq` |
+| route_key 从哪里来 | 同一份配置的 `['route_key']`，与 exchange 成对出现，不硬编码 |
+| message 如何序列化 | 数组先 `json_encode($msg, 320)`；`$isFormatMsg` 为 true 时再由 `formatMsg` 追加 `"\n" + header JSON + "\n" + 真实 IP`（`YII_DEBUG` 关闭时 UA 伪装为 `Go-http-client/1.1`）→ **最终 body 不是纯 JSON** |
+| 失败是否记录日志 | 会。开启 `confirm_select()`，ack/nack 回调改 `$sendResult`；nack 写 `Yii::info`；成功与失败都会 `pushMqInsertLog` 写入 Redis 列表（`send_status` 1/0）；异常另走 `g_log_error` 并补一条 `send_status=0` 日志 |
+| 是否支持重试 | `send` 内部**不重试**。publisher confirm 只确认 Broker 是否收下；失败返回 `code=1002`，异常返回 `code=1003`，是否重发由调用方决定 |
+
+读完后应记住的四个细节：
+
+1. **每次都新建连接**：`send` 里 `AMQPStreamConnection` → `channel()` → 发完 `close()`。直白但开销大，进程内高频发送应复用连接。
+2. **延迟消息靠插件**：`x-delay` 放进 `application_headers`（毫秒），依赖延迟交换机；不是 `TTL + DLX` 方案。
+3. **持久化要两边都开**：消息设了 `DELIVERY_MODE_PERSISTENT`，队列本身也必须是 durable，否则 Broker 重启仍会丢；而 `createExchange` 的默认参数是 `$durable = false`，用默认值建队列会踩坑。
+4. **消费端不能直接 `json_decode` 整个 body**：`formatMsg` 追加了 header 与 IP 两行，取值要按第一行切，或发送时传 `$isFormatMsg = false`。
 
 ---
 
