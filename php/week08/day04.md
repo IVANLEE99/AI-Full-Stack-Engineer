@@ -325,33 +325,63 @@ php -m 是否有 redis/amqp：
 
 ## 7. 今日完成标准
 
-- [ ] 能启动 Docker 环境
-- [ ] 能进入 PHP 容器
-- [ ] 能查看 PHP 版本和扩展
-- [ ] 能查看至少 2 类日志
-- [ ] 能说明容器和本地 PHP 的差异
-- [ ] 能解释容器内为什么用服务名访问 MySQL/RabbitMQ
+- [x] 能启动 Docker 环境
+- [x] 能进入 PHP 容器
+- [x] 能查看 PHP 版本和扩展
+- [x] 能查看至少 2 类日志
+- [x] 能说明容器和本地 PHP 的差异
+- [x] 能解释容器内为什么用服务名访问 MySQL/RabbitMQ
 
-### 7.1 你的环境现状（2026-11-03 实测）
+> 勾选依据：六条已用 [php/week08/docker/](./docker/) 的学习环境**逐条实测跑通**（2026-11-03），完整命令、参数说明与真实输出见 [实战六条标准.md](./docker/实战六条标准.md)。
+> 项目自身的 compose 环境仍未就位，见 [§7.4](#74-仍然待解决项目环境)。
 
-**这六条目前一条都勾不了**，原因不在操作，而在环境还没到位：
+### 7.1 怎么跑起来（学习环境）
 
-| 检查项 | 实测结果 |
+```bash
+cd php/week08/docker
+docker compose up -d
+docker compose ps
+```
+
+四个服务：`learn-php`（PHP 8.2）、`learn-mysql`、`learn-redis`、`learn-rabbitmq`。端口刻意错开，避免和你本机已有服务冲突。
+
+> 前提：Docker Desktop 必须在运行。若看到 `Cannot connect to the Docker daemon`，先打开 Docker Desktop 再执行。
+
+### 7.2 六条标准的实测证据
+
+| 标准 | 判定命令 | 实测结果 |
+|---|---|---|
+| 启动环境 | `docker compose up -d` + `docker compose ps` | 4 个服务 `Up`，端口映射正确；`mysqld is alive` |
+| 进入容器 | `docker compose exec php bash` | `pwd=/app`，能看到 `day01.md`、`RabbitMq.php`（volume 挂载） |
+| 版本与扩展 | `php -v` + `php -m \| grep -E 'redis\|amqp'` | 容器 **8.2.35**，有 `redis` / `amqp` / `sockets`；本机 **8.5.8**，缺 `redis` / `amqp` |
+| 两类日志 | `docker compose logs -f redis` / `rabbitmq`；应用日志读挂载目录 | Redis `Ready to accept connections`；容器写 `/app/docker/logs/app.log`，本机直接读到同一文件 |
+| 容器 vs 本地差异 | 两处各跑 `php -v` | 8.2.35 vs 8.5.8，且扩展不同——**本机跑不了本周 MQ 代码** |
+| 服务名访问 | 容器内连 `127.0.0.1` vs `redis` | `127.0.0.1` → `Connection refused`；`redis` → `ping=1`；`getent hosts` 解析到 `172.18.0.2/3/4`，自己是 `.5` |
+
+第 6 条的原理一句话：**compose 会给每个服务建内部 DNS，服务名就是主机名**。容器里的 `localhost` 是容器自身，所以连 MySQL 必须写服务名 `mysql`，而不是 `127.0.0.1`。
+
+### 7.3 常见坑
+
+| 现象 | 原因 |
 |---|---|
-| `docker ps -a` 里的 PHP 容器 | 无 `app-php73` / `app-php82`；只有一个已退出 7 周的 `mm-redis` |
-| `docker compose ls` | 空，没有已注册的 compose 项目 |
-| `docker images` | 有 `redis:7` / `redis:7-alpine` / `nginx` / `postgres:15`，**没有 PHP 镜像** |
-| `docker-compose-baomi.yml` | 本机没有该文件 |
+| 浏览器打开 `localhost:15673` 报 **HTTP 431** | 请求头过大，不是连不上。浏览器把 `localhost` 下所有 Cookie 一起发；用无痕窗口或 `127.0.0.1:15673` 绕过 |
+| `Class "AMQPStreamConnection" not found` | 把 `amqp` **扩展**当成了 **php-amqplib 库**，需 `composer require php-amqplib/php-amqplib:^3.7` |
+| `composer require` 报缺 `ext-sockets` | php-amqplib 3.x 的硬依赖，Dockerfile 要 `docker-php-ext-install sockets` |
+| MySQL 刚 `Up` 就连不上 | `depends_on` 只保证启动顺序，不保证就绪，需 `mysqladmin ping` 等待 |
 
-对照 [php/03-mall-core-internal.md](../03-mall-core-internal.md#L283-L287) 的原文结论：
+更多见 [实战六条标准.md §8 踩坑记录](./docker/实战六条标准.md#8-踩坑记录)。
 
-> 当前仓库未包含可直接使用的 `Dockerfile` 或 `docker-compose.yml`。……**不要在新手文档中承诺「一条 Docker 命令即可启动」。第一次启动前必须确认团队维护的环境仓库或 Compose 文件位置。**
+### 7.4 仍然待解决：项目环境
 
-所以第 1 条「能启动 Docker 环境」的**正确动作不是硬敲命令**，而是先拿到团队维护的 compose 文件位置。
+六条标准已用**学习环境**完成，但项目真实的 `docker-compose-baomi.yml` 仍不在本机，因此「启动**项目**环境」这一步还不能算真正完成。
 
-### 7.2 已知的真实线索（来自个人环境配置，非本仓库）
+| 项 | 学习环境 | 项目环境 |
+|---|---|---|
+| compose 文件 | `php/week08/docker/docker-compose.yml` | `docker-compose-baomi.yml`（需向团队获取） |
+| PHP 版本 | 8.2 | 团队模板提到 **7.3**，需确认 |
+| 容器名 | `learn-php` | `app-php73` / `app-php82` |
 
-团队 AI 工作空间的 `LOCAL_ENV.md` 记录了命名约定，可作为向团队索取配置文件时的对照：
+团队 AI 工作空间的 `LOCAL_ENV.md` 记录了命名约定：
 
 ```text
 Compose 文件: docker-compose-baomi.yml
@@ -361,32 +391,11 @@ PHP82 容器名: app-php82
 进入 PHP82:   docker exec -it app-php82 bash
 ```
 
-> 这只是**命名约定**，不代表文件已在本机。注意 [php/03-mall-core-internal.md](../03-mall-core-internal.md#L285) 提到的是 **PHP 7.3 容器**——比你现在学的 Yii2 常见版本更老，接手前先确认目标服务实际跑哪个版本，别默认用较新的那个。
+> 这只是**命名约定**，不代表文件已在本机。接手前先确认目标服务实际跑哪个 PHP 版本，别默认用较新的那个。
 
-### 7.3 每条标准的可执行判定
+[03-mall-core-internal.md](../03-mall-core-internal.md#L283-L287) 的结论仍然有效：
 
-拿到 compose 文件后，按下面逐条验证，**有输出才算勾**：
-
-| 标准 | 判定命令 | 通过的样子 |
-|---|---|---|
-| 启动环境 | `docker compose -f docker-compose-baomi.yml up -d` 然后 `docker compose ps` | 各服务 `State` 为 `running`，不是 `restarting` |
-| 进入 PHP 容器 | `docker exec -it app-php82 bash` | 提示符变成容器内的 `#` 或 `$` |
-| PHP 版本与扩展 | 容器内 `php -v`、`php -m \| grep -E 'redis\|amqp\|pdo_mysql'` | 版本符合预期；`redis` / `amqp` 扩展**必须存在**（MQ 与缓存都依赖） |
-| 两类日志 | `docker compose logs -f php` 与 `docker compose logs -f rabbitmq`；再看 `runtime/logs/` | 能同时看到应用日志与 MQ 日志，且时间戳在推进 |
-| 容器 vs 本地 PHP 差异 | 本机 `php -v` 与容器内 `php -v` 各跑一次 | 两个版本号**不一样**，这就是差异的证据。本机实测 `PHP 8.5.8 (cli)`（Homebrew，2026-11-03）；若目标是 `app-php73`，差距是两个大版本 |
-| 服务名访问 | 容器内 `getent hosts mysql rabbitmq redis` 或 `ping -c1 mysql` | 能解析出容器 IP；而 `127.0.0.1` 指容器自己，连不到别的服务 |
-
-第 6 条的原理一句话：**compose 会给每个服务建内部 DNS，服务名就是主机名**。容器里的 `localhost` 是容器自身，所以连 MySQL 必须写服务名 `mysql`（或完整服务名，如 `baomi-mysql`，以 compose 文件为准），而不是 `127.0.0.1`。
-
-### 7.4 环境没到位时，今天能做什么
-
-不必空等。这三件事现在就能完成，且直接服务于本周 MQ 主线：
-
-1. 用已有的 `redis:7-alpine` 跑通容器基本操作（`run` / `exec` / `logs` / `stop`），命令与 [redis 一天速成](../../redis/redis入门一天学完.md#2-安装与连接) 一致；
-2. 用 `docker run -d -p 5672:5672 -p 15672:15672 rabbitmq:3-management` 起一个**独立** RabbitMQ，登录 `http://localhost:15672`（默认 `guest`/`guest`）看队列与 exchange——这能直接验证 [day01](./day01.md) 里的 exchange / route_key / queue 概念。注意本机**目前没有该镜像**，首次运行会先拉取；且 `guest` 用户默认只允许从 `localhost` 登录，在容器映射端口下通常可用，若报 `login refused` 就加 `-e RABBITMQ_DEFAULT_USER=admin -e RABBITMQ_DEFAULT_PASS=admin` 自建账号；
-3. 把「容器 vs 本地 PHP 差异」写成文字：**运行时用的是容器里的 PHP，不是本机 PHP**，所以查版本、查扩展、查 `php.ini` 都要进容器。
-
-> 但第 1 条「启动 Docker 环境」若指**项目 compose 环境**，在上述文件到手前仍不能勾。
+> 当前仓库未包含可直接使用的 `Dockerfile` 或 `docker-compose.yml`。……**不要在新手文档中承诺「一条 Docker 命令即可启动」。**
 
 ---
 
