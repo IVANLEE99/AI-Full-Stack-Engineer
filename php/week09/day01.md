@@ -229,7 +229,70 @@ PHP 用户服务的 `quickLogin` 也是身份建立入口。
 
 | action | 入参 | 调用 Service | 返回 data | 风险 |
 |---|---|---|---|---|
-| `actionQuickLogin` |  |  |  |  |
+| `actionQuickLogin` | `requestParams`（GET+POST 合并，无独立 Form）：核心 `quick_token`；公参 `pf`/`site`/`language`/`currency`/`eid`/`country_code`/`device_number`。`identityType` 由 Service 固定为 1（邮箱），客户端不可改 | `common\services\user\LoginService::quickLogin`（旧链，**不是** `common\services\LoginService` 主链）；Node 链：`UserWebCheckNode → QuickLoginNode → UserLoginReturnUserDetailNode → UserLoginNode → UserSendRabbitMQNode` | 外层 `code=1` / `info=success` / `request_id`；`data` 含 `user_id`、`id`、`email`、`account`、`first_name`、`last_name`、`nick_name`、`head_url`、`sex`、`type`、`is_first`、`token`、`auth_info`、`is_auth`、`is_create_order`、`user_info`，以及会员概览 `identity`/`premium`/`points`/`benefits`/`profile_complete`/`email_verified`。`token` 为 180 天 JWT（claim：`user_id`、`identity_type`、`is_login=1`） | ① Controller 不判断 `$result['code']`，Service 失败仍走 `endSuccess`，客户端拿到 `code=1`；② `data.user_info` 是 `getUserById` 的整行用户数据（`select *`），含 `password` 哈希；③ `quick_token` 只校验签名/过期和 `email` claim，不校验用途，reset/social-link token 可混用；④ `quick-login` 在免登录白名单，未见限流/重放保护；⑤ 180 天 token 无服务端撤销；⑥ `is_auto_register` 取值路径写错，恒为 1 |
+
+### 2.1 全链路（按真实代码）
+
+```text
+POST /user/quick-login
+  ↓
+AuthApiController::init()
+  requestParams = array_merge(GET, POST)
+  ↓
+UserController::actionQuickLogin()
+  $params = $this->requestParams
+  ↓
+common\services\user\LoginService::quickLogin($params)   ← 旧链；不要和 common\services\LoginService 混
+  LoginContext:
+    identityType = 1（邮箱）
+    quickToken   = $params['quick_token']
+  ↓
+UserWebCheckNode
+  identityType ∈ {1..8}；pf ∈ {pc, m, ios, android}
+  ↓
+QuickLoginNode
+  JwtService::verify(quick_token)          // 验签
+  parseToken(...)->isExpired()             // 过期
+  getClaim('email')
+  UserRepository::getUserByEmail(email)    // type ∈ {1,2}，del_flag = 0
+  context->userId = user.id
+  ↓
+UserLoginReturnUserDetailNode
+  UserDetailRedis::getUserDetail(userId)   // 回源 getUserById，select *
+  response[...] = 用户资料 + token + auth_info + 会员概览
+  JwtService::createToken(userId, time(), identityType, 1)   // 180 天
+  ↓
+UserLoginNode
+  设备记录（ios/android）、登录日志、神策上报
+  ↓
+UserSendRabbitMQNode
+  direct.combine_data / exchange_combine_inspirations_data
+  ↓
+UserController::endSuccess($result['data'], $result['info'])
+  → { code: 1, data: {...}, info: 'success', request_id: '...' }
+```
+
+### 2.2 关键字段
+
+| 字段 | 来源 | 说明 |
+|---|---|---|
+| `user_id` / `id` | `UserDetailRedis::getUserDetail()` | 同一个用户 ID |
+| `token` | `JwtService::createToken(..., 1)` | 180 天；`is_login=1` |
+| `auth_info.identifier` | `MyFunction::getCryptoStr()` | 前 2 位 + `****` + 后 1 位 |
+| `user_info` | `UserRepository::getUserById()` | `select('*')`，包含 `password` 等整行字段 |
+| `is_first` | `$context->isRegisterNow === false` | quickLogin 默认 `false`，所以返回 `false` |
+| `is_auto_register` | `empty($context->userInfo['userInfo']['password'])` | 嵌套键不存在，恒为 `true` → 恒返回 `1` |
+
+### 2.3 风险核对
+
+| 风险 | 证据 | 后果 |
+|---|---|---|
+| 失败当成功返回 | `UserController::actionQuickLogin` 未判断 `$result['code']` | 登录失败也返回 `code=1`，前端无法靠 code 区分 |
+| 密码哈希外泄 | `UserLoginReturnUserDetailNode` 把 `getUserById` 整行放入 `user_info` | 客户端可拿到 `password` 字段 |
+| token 用途混淆 | `QuickLoginNode` 不校验 `type`/`issuer`；reset/social-link token 同密钥且带 `email` | 15 分钟内可把其它用途 token 当 `quick_token` 登录 |
+| 免登录 + 无频控 | `LoginAuthFilter` 白名单含 `quick-login` | 可被批量探测/重放 |
+| 长期 token | `JwtService::$expireTime = 180 天` | 泄露后长期有效，无撤销机制 |
+| 用户枚举 | `QuickLoginNode` 抛出 `The mailbox has not been registered` | 错误信息可能被前端展示或用于探测 |
 
 ---
 
