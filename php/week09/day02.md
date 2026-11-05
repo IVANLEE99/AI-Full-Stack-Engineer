@@ -194,19 +194,55 @@ PHP 的 `UserDetailRedis` 思路类似。
 ## 2. 源码阅读
 
 - `user-service/common/redis/user/UserDetailRedis.php`
+- `user-service/common/BaseRedis.php`
+- `user-service/common/services/user/UserService.php`
 
-> 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
+> 说明：路径均为公开代号 + 相对路径。本地参考源码见 [UserDetailRedis.php](./UserDetailRedis.php)。
 
 阅读记录：
 
 | 阅读点 | 记录 |
 |---|---|
-| 缓存 key 规则 |  |
-| TTL |  |
-| 读取方法 |  |
-| 写入方法 |  |
-| 删除/失效方法 |  |
-| 是否缓存敏感字段 |  |
+| 缓存 key 规则 | `self::$key['user']['detail'] . $userId` → `bm:user:detail:by:id:{userId}`（前缀继承自 `common\BaseRedis::$key['user']['detail']`） |
+| TTL | `86400 * 3` 秒（3 天 = 259,200 秒），通过 `redis->setex()` 设置 |
+| 连接/数据库实例 | `\Yii::$app->redisUserDetail`，内部调用 `$connect->select(7)` 切换到 DB 7 号库进行命名空间隔离 |
+| 读取方法 | `getUserDetail($userId)`：先从 Redis `get($key)`；未命中时触发**被动回源缓存**，调 `UserRepository::getUserById($userId)`，若查到则补齐 `user_id` 并调 `setUserDetail` 写回 Redis，最后返回解码的关联数组 |
+| 写入方法 | `setUserDetail($userId, $userDetail)`：执行 `$redis->setex($key, 86400 * 3, @json_encode($userDetail, 320))`（320 即 `JSON_UNESCAPED_SLASHES \| JSON_UNESCAPED_UNICODE`） |
+| 删除/失效方法 | `delUserDetail($userId)`：执行 `$redis->del($key)` |
+| 是否缓存敏感字段 | ⚠️ **是，存在重大数据暴露风险**：回源读取的是 `UserRepository::getUserById`（默认 `select *` 且经 `fieldDecrypt` 还原明文），因此 Redis 中以明文 JSON 存储了该用户的完整表记录，**包含密码哈希（`password`）、明文手机号（`phone`）、明文邮箱（`email`）、真实姓名（`first_name`/`last_name`）** |
+
+### 2.1 源码时序与两种读写策略对比
+
+#### 策略 A：被动缓存（Read-Through / Cache Aside）
+主要入口：`UserDetailRedis::getUserDetail($userId)`
+```text
+调用 getUserDetail(userId)
+  ↓
+Redis GET bm:user:detail:by:id:{userId}
+  ├─ 命中：@json_decode($json, true) → 返回
+  └─ 未命中（被动回源）：
+       ↓
+     UserRepository::getUserById(userId)  // MySQL: select * from user where id=... and del_flag=0
+       ├─ DB 查无此人：直接 return []（❌ 未写空缓存，存在缓存穿透隐患）
+       └─ DB 查到用户：
+            补齐 user_id = id
+            setUserDetail(userId, userDetail) // Redis SETEX 3 天
+            返回 userDetail
+```
+
+#### 策略 B：主动预热（Write-Through）
+主要入口：`UserService::setUserDetailRedis($userId)`
+```text
+调用 setUserDetailRedis(userId)
+  ↓
+UserRepository::getUserById(userId)   // 查 DB 最新数据
+  ↓
+UserDetailRedis::delUserDetail(userId) // 先删旧缓存
+  ↓
+UserDetailRedis::setUserDetail(userId, userDetail) // 写入新缓存（TTL 3 天）
+  ↓
+返回最新 userDetail
+```
 
 ---
 
@@ -216,17 +252,51 @@ PHP 的 `UserDetailRedis` 思路类似。
 
 记录 key、TTL、get/set/delete 方法。
 
+- **Key 结构**：`bm:user:detail:by:id:{userId}`（由 `BaseRedis::$key['user']['detail'] = 'bm:user:detail:by:id:'` 与整型 `$userId` 拼接）。
+- **TTL 设定**：硬编码为 `86400 * 3` 秒（72 小时）。
+- **DB 实例**：`\Yii::$app->redisUserDetail->select(7)`，与通用缓存/消息队列物理/逻辑库隔离。
+- **获取（Get）**：`getUserDetail($userId)` 实现了**被动回源（Lazy Load）**。但注意：若数据库查空时直接 `return []`，未缓存空值标记，容易遭受**缓存穿透**。
+- **写入（Set）**：`setUserDetail($userId, $userDetail)` 统一执行 `setex`，对数据做了 JSON 序列化（带参数 320）。
+- **删除（Del）**：`delUserDetail($userId)` 直接调用 Redis `DEL` 命令，用于资料变更时的失效淘汰。
+
 ### 练习 2：列缓存 key 规则
 
-| 数据 | key 规则 | TTL | 是否敏感 |
-|---|---|---:|---|
-| 用户详情 |  |  |  |
-| token |  |  |  |
-| 权限 |  |  |  |
+| 数据 | key 规则 | TTL | 是否敏感 | 说明/业务场景 |
+|---|---|---:|---|---|
+| 用户详情 | `bm:user:detail:by:id:{userId}` | 3 天 (259200s) | ⚠️ 高度敏感（含密码哈希与解密 PII） | `UserDetailRedis`，加速 C 端与内部服务频繁查用户 |
+| 登录态 Token | `bm:login:{token}`（或 JWT 客户端自包含） | 与登录有效期相同 | ⚠️ 敏感凭证 | `BaseRedis::$key['user']['login']`，服务端维护登录态映射 |
+| 找回密码 Token | `bm:forget:password:{token}` | 15 分钟 (900s) | ⚠️ 高度敏感（可设密） | 邮件重置密码校验，验后即焚 |
+| 访问授权 Token | `bm:user:access_token:{sn}:{userId}:{eid}` | 临时有效 | ⚠️ 敏感 | 针对特定业务单号与设备的授权访问 |
+| 用户设备信息 | `bm:user:device:number:{userId}` | 长期 | 普通 | 记录 App Push 设备号与操作系统版本 |
+| 邮箱验证码 | `bm:email:code:{email}:{businessCode}` | 5~15 分钟 | 敏感 | 注册、找回密码、绑定邮箱的图形/短信/邮件验证码 |
 
 ### 练习 3：说明何时写入/失效
 
-至少列 5 个用户资料更新或权限变更场景。
+真实代码库中的 6 个典型失效与写入场景：
+
+1. **场景 1：用户个人资料更新（修改昵称、头像）**
+   - **调用链路**：`UserController::actionUpdate` → `UserUpdateNode::invokeNode`
+   - **动作**：`UserRepository::updateUserById(...)` 更新数据库后，执行 `UserDetailRedis::instance()->delUserDetail($context->userId);`。
+   - **机制**：标准 Cache Aside 模式，先更 DB，再删缓存，由下次读取时被动重建。
+2. **场景 2：用户修改或重置密码**
+   - **调用链路**：`RegisterService::resetPassword` → `ResetPasswordNode::invokeNode`
+   - **动作**：更新 DB 密码后，调用 `UserService::instance()->setUserDetailRedis($context->userId);`（内部先 `del` 后查 DB 再 `set`）。
+   - **机制**：主动刷新预热，确保后续立刻用新密码/凭据读取时命中最新数据。
+3. **场景 3：新用户注册落库**
+   - **调用链路**：`RegisterService::register` → `RegisterNode::invokeNode` 或 `UserAddFormatNode`
+   - **动作**：用户插入 DB 成功后，立即调用 `UserService::setUserDetailRedis($context->userId);`。
+   - **机制**：新用户刚注册时紧接着就是登录成功并加载个人主页，主动预热避免首次读取穿透到 DB。
+4. **场景 4：用户绑定邮箱 / 第三方账号设密**
+   - **调用链路**：`RegisterService::bindEmail` 或 `SocialLinkService::setPassword`
+   - **动作**：在更新 `User` 表和 `UserAuths` 表后，主动调用 `UserService::instance()->setUserDetailRedis($userId);`。
+   - **机制**：用户认证方式增加（由游客/第三方转为正式邮箱用户），强制同步刷新缓存中的邮箱与状态。
+5. **场景 5：首次读取或 TTL 到期自然失效**
+   - **调用链路**：`UserDetailRedis::getUserDetail($userId)`
+   - **动作**：Redis 查不到 key，回源 `UserRepository::getUserById($userId)`，查到后写入 Redis（TTL 3 天）。
+   - **机制**：被动读穿透构建。
+6. **场景 6：后台运营封禁 / 审核变更用户类型（高危潜在漏洞）**
+   - **调用链路**：管理后台审核企业客户或封禁非法用户
+   - **动作**：若后台管理系统只通过 SQL 直接改了 `user.status = 0` 或 `user.type`，而**未跨服务调用 `delUserDetail` 淘汰 Redis**，用户在前台仍能在 3 天内凭借缓存中的 `status=1` 继续正常访问下单！必须在管理端变更状态时发布 Redis 广播或 MQ 消息删除该缓存。
 
 ---
 
@@ -257,21 +327,21 @@ PHP 的 `UserDetailRedis` 思路类似。
 
 ## 6. 今日产出
 
-- [ ] `UserDetailRedis` 阅读笔记
-- [ ] 缓存 key 规则表
-- [ ] 写入/失效策略表
-- [ ] 隐私字段脱敏清单
-- [ ] AI Review 记录
+- [x] `UserDetailRedis` 阅读笔记
+- [x] 缓存 key 规则表
+- [x] 写入/失效策略表
+- [x] 隐私字段脱敏清单
+- [x] AI Review 记录
 
 ---
 
 ## 7. 今日完成标准
 
-- [ ] 能说明用户缓存读写流程
-- [ ] 能说明缓存 key 规则
-- [ ] 能说明何时写入和失效
-- [ ] 能列出用户缓存 5 个风险
-- [ ] 能说明哪些用户资料需要脱敏
+- [x] 能说明用户缓存读写流程
+- [x] 能说明缓存 key 规则
+- [x] 能说明何时写入和失效
+- [x] 能列出用户缓存 5 个风险
+- [x] 能说明哪些用户资料需要脱敏
 
 ---
 
@@ -321,11 +391,11 @@ PHP 的 `UserDetailRedis` 思路类似。
 
 | 记录项 | 内容 |
 |--------|------|
-| 今日最清楚的概念 |  |
-| 今日最卡的概念 |  |
-| JS/Node 类比是否帮助理解 |  |
-| 实际耗时 |  |
-| 明日要补的问题 |  |
+| 今日最清楚的概念 | Cache Aside 的两套变体实现：更新资料走「改 DB + `delUserDetail` 删缓存待读时重建」；重要动作（重置密码/注册）走「改 DB + `setUserDetailRedis` 主动预热」 |
+| 今日最卡的概念 | 缓存穿透与敏感字段暴露的隐蔽性：`getUserById` 查 `select *` 并解密明文塞进 Redis，缓存直接包含密码哈希；且查空不写空缓存导致的穿透风险 |
+| JS/Node 类比是否帮助理解 | 非常有帮助，Node.js 下 ioredis 的 `getUserDetail(id)` 封装、Cache Aside 中 `redis.setex` 与缓存失效逻辑完全一一对应 |
+| 实际耗时 | 约 2.5h（源码精读 + 跨控制器/Node 追踪） |
+| 明日要补的问题 | Day 03：注册 Node 链的具体执行顺序与各个 Node 的职责编排 |
 
 ---
 

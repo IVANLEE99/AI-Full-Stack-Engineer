@@ -176,15 +176,24 @@ PHP 注册 Node 链类似。
 
 ## 2. 源码阅读
 
-- `user-service/common/services/user/RegisterService.php`
+- `user-service/common/services/RegisterService.php`（C 端注册主链）
+- `user-service/common/services/user/RegisterService.php`（邮箱订阅、重置密码与绑定等）
+- `user-service/common/services/contexts/RegisterContext.php`（注册流水线上下文）
+- `user-service/common/services/nodes/register/*`（注册节点实现）
 
-> 说明：路径均为公开代号 + 相对路径。学习时按你的本地仓库映射查找对应文件。
+> 说明：路径均为公开代号 + 相对路径。本地参考源码见 [RegisterService.php](./RegisterService.php)。
 
 阅读记录：
 
-| Node | 输入 | 输出 | 职责 | 失败时提示 |
+| Node | 输入（Context 字段） | 输出（Context 写入） | 职责 | 失败/异常处理 |
 |---|---|---|---|---|
-|  |  |  |  |  |
+| `RegisterParamsCheckNode` | `context->channelType` | 无（通过校验） | 基础参数校验，验证注册渠道类型是否合法（`LoginChannel`） | `throw new Exception(4444)`，引擎中断并返回通用错误 |
+| `SetGuestInfoNode` | `context->userId`（由请求 Header/Token 解析） | `context->guestInfo` | 检查并提取当前访问是否已有游客（tourist）身份，以便后续**游客平滑转正**，避免数据冗余和丢单 | 无游客身份则置空数组，不阻断流程 |
+| `SetThirdInfoNode` | `context->channelType`, `context->params`（如 `id_token`/`access_token`/`quick_token`） | `context->thirdInfo`, `context->email` | 解析并校验第三方 OAuth 凭证（Google/Facebook/Apple/Twitter/Firebase/Quick），提取统一身份数据与邮箱 | 凭证无效或解析失败抛 `70001`，引擎回滚并中断 |
+| `ThirdInfoIsRegisterNode` | `context->thirdInfo` (`identifier`, `identity_type`) | `context->previouslyRegistered`, `context->userId` | 查 `user_auths` 表判断三方身份是否已绑定过；若已注册，置标记并复用已有 `userId` | 未注册则跳过，已注册则后续免除重复新建用户 |
+| `RegisterNode` | `context->email`, `context->params['password']`, `context->guestInfo`, `context->thirdInfo` | `context->userId`, `context->userData` | 核心建号与数据落库：①查重；②游客转正 (`update`) 或新用户落库 (`insert`)；③密码 Hash；④写 `user_auths`；⑤**调用 `setUserDetailRedis` 预热缓存**；⑥发 MQ 广播 | 遇到重复注册直接复用已有用户；落库异常抛出并触发引擎节点回滚 |
+| `RegisterSubscribeNode` | `context->email`, `context->params` | `context->subscribeResponse` | 为注册用户自动完成营销邮箱订阅，并调用订阅服务发放新人优惠券礼包 | 订阅失败抛异常中断注册（确保营销券原子性绑定） |
+| `ReturnDataFormatNode` | `context->userId`, `context->email`, `context->subscribeResponse`, `context->userData` | `context->response` | 组装统一 API 响应体，调用 `JwtService::createToken` 签发 180 天正式 JWT，挂载订阅券与用户标签 | 格式化无外部依赖，不抛异常 |
 
 ---
 
@@ -192,29 +201,86 @@ PHP 注册 Node 链类似。
 
 ### 练习 1：列出注册前 5 个 Node
 
-记录名称、职责、输入和输出。
+记录名称、职责、输入和输出：
+
+1. **`RegisterParamsCheckNode`（参数校验节点）**
+   - **职责**：作为注册管线首道关卡，阻断缺失关键参数的非法请求。
+   - **输入**：`$context->channelType`
+   - **输出**：无（验证成功后进入下一节点）
+2. **`SetGuestInfoNode`（游客身份提取节点）**
+   - **职责**：提取当前设备绑定的游客账号信息，为「游客转正」做准备，继承原游客的加购记录与浏览足迹。
+   - **输入**：`$context->userId`（从请求 Header `token` 解析）
+   - **输出**：`$context->guestInfo`（若非游客则为空）
+3. **`SetThirdInfoNode`（第三方身份解析节点）**
+   - **职责**：统一解析 Google、Apple、Facebook、Twitter、Firebase 等三方 OAuth 授权 Token，提取用户唯一标识 `identifier` 与三方主邮箱。
+   - **输入**：`$context->channelType`, `$context->params`
+   - **输出**：`$context->thirdInfo`, `$context->email`
+4. **`ThirdInfoIsRegisterNode`（三方查重绑定节点）**
+   - **职责**：查询 `user_auths` 表，判断该三方凭证是否已绑定老用户，防止三方登录反复触发重复新建账号。
+   - **输入**：`$context->thirdInfo`
+   - **输出**：`$context->previouslyRegistered` (bool), `$context->userId` (int)
+5. **`RegisterNode`（用户入库与事务落网节点）**
+   - **职责**：核心落库节点。若已有游客则更新 `type=1` 转正；若新用户则加盐 Hash 密码写入 `user` 表并插入 `user_auths`；立即主动刷新 Redis 用户详情缓存；触发注册 MQ 广播和会员积分赠送。
+   - **输入**：`$context->email`, 密码明文, `$context->guestInfo`, `$context->thirdInfo`
+   - **输出**：`$context->userId`, `$context->userData`
 
 ### 练习 2：画注册 Node 顺序图
 
-```text
-RegisterService
-  ↓
-ValidateInputNode
-  ↓
-VerifyCodeNode
-  ↓
-CheckUserExistsNode
-  ↓
-CreateUserNode
-  ↓
-GenerateTokenNode
-```
+依据 `\common\services\RegisterService::register` 真实执行链路绘制：
 
-按源码实际顺序修正。
+```text
+HTTP POST /register/email-register 或 code-register
+  ↓
+RegisterController (参数提取、验证码前置验证、注入 channel_type)
+  ↓
+\common\services\RegisterService::register($params)
+  ↓
+RegisterContext 实例化与基础参数注入
+  ↓
+NodeExecutionEngine 开启节点执行引擎
+  ↓
+[Node 1] RegisterParamsCheckNode
+  └─ 校验 channelType 必填，防空请求打穿
+  ↓
+[Node 2] SetGuestInfoNode
+  └─ 判断当前 token 是否为游客 (type=3)，提取 guestInfo
+  ↓
+[Node 3] SetThirdInfoNode
+  └─ 验签 OAuth Token / 解析 Apple、Google、Firebase 信息，补齐 email
+  ↓
+[Node 4] ThirdInfoIsRegisterNode
+  └─ 查 user_auths 表，判断三方 identifier 是否已注册
+  ↓
+[Node 5] RegisterNode
+  ├─ 邮箱查重：若已注册则标记 previouslyRegistered
+  ├─ 游客转正 (update) 或 新建用户 (insert) + 密码 Hash 加密
+  ├─ 绑定记录落库 (user_auths)
+  ├─ 主动刷新用户缓存: UserService::setUserDetailRedis(userId)
+  ├─ 发送 MQ 事件广播: RabbitMq::send('direct.user_register')
+  └─ 赠送注册欢迎积分与绑定设备信息
+  ↓
+[Node 6] RegisterSubscribeNode
+  └─ 执行邮箱订阅 (SubscribeService::subscribe)，领取新人专属券
+  ↓
+[Node 7] ReturnDataFormatNode
+  └─ 签发正式登录 JWT (JwtService::createToken, 有效期 180 天)
+  └─ 组装 user_id, email, token, subscribe_info, coupon_alias_format
+  ↓
+统一输出: { code: 1, data: {...}, info: 'success', request_id: '...' }
+```
 
 ### 练习 3：标注敏感字段
 
-列出 Context 中哪些字段不能打印日志。
+在 `RegisterContext` 与请求参数流转中，以下字段绝对禁止明文记入持久化日志或向前端未经脱敏回显：
+
+| 敏感字段 | 来源/位置 | 敏感等级 | 处理规范 | 风险后果 |
+|---|---|---|---|---|
+| `params['password']` | 客户端请求入参 | 🔴 极高（核心凭据） | 绝对**禁止打印进任何文本日志**（包含 debug 日志）；入库前必须由 `BaseFunction::passwordCrypt` 执行加盐不可逆散列 | 日志泄露或数据库泄露引发撞库与用户账号全量失窃 |
+| `params['code']` | 验证码输入 | 🟠 高（临时验证凭证） | 只能在内存中用于比较；严禁打入业务日志；验证通过后立即废弃 | 攻击者监听日志即可绕过邮箱/手机实名鉴权 |
+| `params['id_token']` / `access_token` | 第三方 OAuth 入参 | 🟠 高（第三方授权凭据） | 验签与获取用户身份后即丢弃，不可明文保存或拼接进 URL 日志 | 攻击者可利用未失效 Token 伪造三方身份发起请求 |
+| `response['token']` | `JwtService::createToken` | 🟠 高（平台主会话凭证） | 有效期长达 180 天，禁止打印在 Nginx 访问日志与普通业务日志中 | 令牌被截获后可在 180 天内长期非法冒充用户 |
+| `email` / `phone` | 用户注册入参 | 🟡 中（PII 个人隐私） | 数据库中必须由 `UserSensitiveFormat` 加密存储；前端回显或调试日志中需调用 `getCryptoStr` 掩码脱敏 | 遭受数据爬取或隐私合规重罚（如 GDPR / CCPA 违规） |
+| `thirdInfo['identifier']` | Apple sub / Google sub / OpenID | 🟡 中（第三方用户唯一标识） | 返回给前端时必须掩码处理（如 `getCryptoStr`：保留首 2 尾 2，中间 `****`） | 第三方账户 ID 泄露导致跨应用撞库关联追踪 |
 
 ---
 
@@ -245,21 +311,21 @@ GenerateTokenNode
 
 ## 6. 今日产出
 
-- [ ] 注册 Node 图
-- [ ] 5 个 Node 职责表
-- [ ] 注册 Context 字段表
-- [ ] 注册安全风险清单
-- [ ] AI Review 记录
+- [x] 注册 Node 图
+- [x] 5 个 Node 职责表
+- [x] 注册 Context 字段表
+- [x] 注册安全风险清单
+- [x] AI Review 记录
 
 ---
 
 ## 7. 今日完成标准
 
-- [ ] 能列 5 个注册 Node
-- [ ] 能解释 Node 顺序为什么重要
-- [ ] 能说明重复注册如何防止
-- [ ] 能标注密码、验证码、token 等敏感字段
-- [ ] 能用 middleware 类比注册链
+- [x] 能列 5 个注册 Node
+- [x] 能解释 Node 顺序为什么重要
+- [x] 能说明重复注册如何防止
+- [x] 能标注密码、验证码、token 等敏感字段
+- [x] 能用 middleware 类比注册链
 
 ---
 
@@ -309,11 +375,11 @@ GenerateTokenNode
 
 | 记录项 | 内容 |
 |--------|------|
-| 今日最清楚的概念 |  |
-| 今日最卡的概念 |  |
-| JS/Node 类比是否帮助理解 |  |
-| 实际耗时 |  |
-| 明日要补的问题 |  |
+| 今日最清楚的概念 | 注册 Node 流水线编排设计：`RegisterParamsCheckNode` → `SetGuestInfoNode`（游客平滑转正） → `SetThirdInfoNode` → `ThirdInfoIsRegisterNode` → `RegisterNode`（落库+缓存预热+MQ） → `RegisterSubscribeNode` → `ReturnDataFormatNode` |
+| 今日最卡的概念 | 命名空间历史遗留的「多套 RegisterService 并存」坑：Controller 实际调用的是顶层 `\common\services\RegisterService::register`，而非 `user\RegisterService`；以及游客转正与新注册在落库节点的分流处理 |
+| JS/Node 类比是否帮助理解 | 非常形象，每个 Node 就是一个带上下文的 Express/Koa 中间件处理函数，Context 共享请求状态，任何一步抛异常都会触发执行引擎回滚与中断 |
+| 实际耗时 | 约 3h（主链 7 个 Node 逐行核对 + 跨控制器反查） |
+| 明日要补的问题 | Day 04：OAuth 第三方登录流程中各服务（Google/Apple/FB）的 token 验签与身份映射细节 |
 
 ---
 
