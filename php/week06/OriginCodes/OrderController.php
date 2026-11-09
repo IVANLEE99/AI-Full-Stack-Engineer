@@ -1614,7 +1614,7 @@ class OrderController extends BaseApiController
     /**
      * 订单异常检测（订单信息是否发生改变/重复订单）
      *
-     * @doc https://yapi.popicorns.com/project/135/interface/api/40586
+     * @doc https://yapi.bm.com/project/135/interface/api/40586
      *
      * @return void
      */

@@ -4346,7 +4346,7 @@ class OrderService extends BaseService
     /**
      * 订单异常检测（订单信息是否发生改变/重复订单）
      *
-     * @doc https://yapi.popicorns.com/project/135/interface/api/40586
+     * @doc https://yapi.bm.com/project/135/interface/api/40586
      *
      * @param array  $params  所有参数集合，主要为了兼容之前的重复订单校验
      * @param string $orderNo 订单号
