@@ -1,0 +1,47 @@
+{
+  "name": "langchain-node-tutorial",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "check": "npm run typecheck && npm test && npm run docs:check",
+    "docs:check": "tsx scripts/check-docs.ts",
+    "example:overview": "tsx examples/01-overview.ts",
+    "example:model": "tsx examples/02-models.ts",
+    "example:trace": "tsx examples/03-langsmith.ts",
+    "example:prompt": "tsx examples/04-prompt-pipeline.ts",
+    "example:tool": "tsx examples/05-tool-schema.ts",
+    "example:structured": "tsx examples/06-structured-output.ts",
+    "example:agent": "tsx examples/07-agent.ts",
+    "example:middleware": "tsx examples/08-middleware.ts",
+    "example:memory": "tsx examples/09-memory.ts",
+    "example:rag": "tsx examples/10-rag-local.ts",
+    "example:graph": "tsx examples/11-langgraph.ts",
+    "example:mcp": "tsx examples/12-mcp.ts",
+    "example:assistant": "tsx examples/13-knowledge-assistant.ts",
+    "examples:offline": "tsx scripts/run-offline.ts"
+  },
+  "dependencies": {
+    "@langchain/classic": "1.0.62",
+    "@langchain/core": "1.5.0",
+    "@langchain/langgraph": "1.7.5",
+    "@langchain/mcp-adapters": "2.0.3",
+    "@langchain/openai": "1.8.5",
+    "@langchain/textsplitters": "1.0.2",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "dotenv": "18.0.10",
+    "langchain": "1.6.7",
+    "langsmith": "0.13.1",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.1"
+  }
+}
